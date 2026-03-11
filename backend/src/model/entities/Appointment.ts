@@ -5,6 +5,7 @@ import { HealthInsurance } from './HealthInsurance';
 import { LegalGuardian } from './LegalGuardian';
 import { AppointmentStatus } from '../../utils/enums/AppointmentStatus';
 import { Module } from './Module';
+import { AppointmentSeries } from './AppointmentSeries';
 
 @Entity()
 export class Appointment {
@@ -34,6 +35,9 @@ export class Appointment {
 
   @ManyToOne(() => HealthInsurance, { nullable: true })
   healthInsurance?: HealthInsurance;
+
+  @ManyToOne(() => AppointmentSeries, { nullable: true })
+  series?: AppointmentSeries;
 
 
 
