@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+
+/* Fuente personalizada */
+@font-face {
+  font-family: 'bahnschrift', sans-serif;
+  src: url('/src/assets/bahnschrift.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+}
+
+/* Si quieres aplicar la fuente globalmente */
+html {
+  font-family: 'bahnschrift', system-ui, Avenir, Helvetica, sans-serif;
+}
+
+/* Utilidad para ocultar visualmente (Tailwind ya tiene sr-only, pero la dejamos por compatibilidad) */
+.visually-hidden {
+  position: absolute !important;
+  height: 1px;
+  width: 1px;
+  overflow: hidden;
+  clip: rect(1px, 1px, 1px, 1px);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
+
+/* los colores #e6f5f7 */
+:root {
+  --color-primary: rgba(59, 154, 184, 1);
+  --color-bg: #e6f5f7;
+  --color-text: rgba(0, 0, 0, 0.87);
+}
+
+body {
+  background-color: var(--color-bg) !important;
+}
+
