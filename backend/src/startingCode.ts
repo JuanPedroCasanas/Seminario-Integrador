@@ -263,4 +263,28 @@ export const startingCode = async () => {
     });
     await PatientController.addDependentPatient(req as any, res as any);
 
+    //Inserta usuario admin
+    await em.execute(`
+        INSERT INTO "user" (
+            "id",
+            "mail",
+            "password",
+            "is_active",
+            "role",
+            "professional_id",
+            "patient_id",
+            "legal_guardian_id"
+        )
+        VALUES (
+            11,
+            'admin@ejemplo.com',
+            '$2b$10$l2H8tjGWTBEDQmnnTG8vC.VO/Y5eG6iAMXJof3JI4v3KrDS/bSnIC',
+            true,
+            'admin',
+            NULL,
+            NULL,
+            NULL
+        );
+        `);
+
 }

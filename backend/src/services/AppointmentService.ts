@@ -5,14 +5,15 @@ import { Professional } from '../model/entities/Professional';
 import { AppointmentStatus } from '../utils/enums/AppointmentStatus';
 import {
     AppointmentNotAvailableError,
-    BaseHttpError,
+    AppointmentSeriesNotAvailableError,
     InvalidParameterError,
     InvalidStatusChangeError,
     NotFoundError
 } from '../utils/errors/BaseHttpError';
-import { populate } from 'dotenv';
 import { toDetailedAppointmentDTO } from '../utils/dto/appointment/detailedAppointmentDto';
 import { LegalGuardian } from '../model/entities/LegalGuardian';
+import { DayOfWeek } from '../utils/enums/DayOfWeek';
+import { AppointmentSeries } from '../model/entities/AppointmentSeries';
 
 export class AppointmentService {
 
@@ -42,6 +43,86 @@ export class AppointmentService {
 
         await em.flush();
         return appointment;
+    }
+
+    static async assignAppointmentSeries(
+        idProfessional: number,
+        idPatient: number,
+        day: DayOfWeek,
+        hour: number,
+        validMonth: number,
+        validYear: number
+    ) {
+        const em = await getORM().em.fork();
+
+        const professional = await em.findOne(Professional, { id: idProfessional });
+
+        if (!professional || !professional.isActive) {
+            throw new NotFoundError('Profesional');
+        }
+
+        const patient = await em.findOne(Patient, { id: idPatient });
+
+        if (!patient) {
+            throw new NotFoundError('Paciente');
+        }
+
+        const legalGuardian = patient.legalGuardian;
+
+        const now = new Date();
+
+        const monthStart = new Date(validYear, validMonth - 1, 1);
+        const monthEnd = new Date(validYear, validMonth, 0, 23, 59, 59);
+
+        const searchStart =
+            now.getMonth() + 1 === validMonth && now.getFullYear() === validYear
+                ? now
+                : monthStart;
+
+        const appointments = await em.find(
+            Appointment,
+            {
+                professional: professional,
+                startTime: { $gte: searchStart, $lte: monthEnd }
+            }
+        );
+
+        const matchingAppointments = appointments
+            .filter(a =>
+                a.startTime.getDay() === day &&
+                a.startTime.getHours() === hour
+            )
+            .filter(a => a.startTime > now)
+            .sort((a, b) => a.startTime.getTime() - b.startTime.getTime());
+
+        if (matchingAppointments.length === 0) {
+            throw new AppointmentSeriesNotAvailableError();
+        }
+
+        //Si alguno está ocupado → NO serie
+        for (const appointment of matchingAppointments) {
+            if (appointment.status !== AppointmentStatus.Available) {
+                throw new AppointmentSeriesNotAvailableError();
+            }
+        }
+
+        const series = new AppointmentSeries();
+        series.validMonth = validMonth;
+        series.validYear = validYear;
+
+        await em.persist(series);
+
+        for (const appointment of matchingAppointments) {
+            appointment.patient = patient;
+            appointment.legalGuardian = legalGuardian;
+            appointment.healthInsurance = patient.healthInsurance;
+            appointment.status = AppointmentStatus.Scheduled;
+            appointment.series = series;
+        }
+
+        await em.flush();
+
+        return matchingAppointments;
     }
 
     static async updateAppointmentStatus(idAppointment: number, newStatus:string) {

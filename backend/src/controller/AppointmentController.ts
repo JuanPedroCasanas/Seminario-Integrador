@@ -26,6 +26,35 @@ export class AppointmentController {
         }
     }
 
+    static async assignAppointmentSeries(req: Request, res: Response) {
+        const { 
+            idProfessional,
+            idPatient,
+            day,
+            hour,
+            validMonth,
+            validYear
+            } = req.body;
+
+        try {
+            const appointment = await AppointmentService.assignAppointmentSeries(idProfessional, idPatient, day, hour, validMonth, validYear);
+
+            return res.status(200).json({
+                message: 'Se asigno correctamente el paciente al turno sostenido',
+                appointment: safeSerialize(appointment)
+            });
+
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al asignar turno sostenido' });
+            }
+        }
+    }
+
     //Solo los profesionales pueden completar turnos
     static async updateAppointmentStatus(req: Request, res: Response) {
         const { idAppointment, status } = req.body;

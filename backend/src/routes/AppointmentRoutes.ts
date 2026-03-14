@@ -10,6 +10,7 @@ import { authRoles } from '../utils/auth/roles';
 import { authJwt } from '../utils/auth/jwt';
 import { UserRole } from '../utils/enums/UserRole';
 import { getByLegalGuardianAppointmentSchema } from '../utils/validations/schema/appointment/getByLegalGuardianAppointmentSchema';
+import { assignAppointmentSeriesSchema } from '../utils/validations/schema/appointment/assignAppointmentSeriesSchema';
 
 const router = express.Router();
 
@@ -52,6 +53,21 @@ router.post(
   authJwt,
   authRoles([UserRole.Patient, UserRole.LegalGuardian, UserRole.Admin]),
   AppointmentController.assignAppointment
+);
+
+/**
+ * @swagger
+ * /appointment/assignSeries:
+ *   post:
+ *     summary: Asignar/Reservar un turno sostenido para un paciente
+ *     tags: [Turnos]
+ */
+router.post(
+  '/assignSeries',
+  validate(assignAppointmentSeriesSchema),
+  authJwt,
+  authRoles([UserRole.Patient, UserRole.LegalGuardian, UserRole.Admin]),
+  AppointmentController.assignAppointmentSeries
 );
 
 /**

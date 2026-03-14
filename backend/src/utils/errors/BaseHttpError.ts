@@ -100,3 +100,9 @@ export class AppointmentNotAvailableError extends BaseHttpError {
     super(409, 'APPOINTMENT_UNAVAILABLE', reason);
   }
 }
+
+export class AppointmentSeriesNotAvailableError extends BaseHttpError {
+  constructor(reason: string = 'No hay horarios disponibles para reservar este turno sostenido') {
+    super(409, 'APPOINTMENT_SERIES_UNAVAILABLE', reason);
+  }
+}
