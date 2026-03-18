@@ -10,6 +10,9 @@ export { default as AppointmentList } from "./AppointmentList/AppointmentList";
 // Appointment Schedule
 export { default as AppointmentSchedule } from "./AppointmentSchedule/AppointmentSchedule";
 
+// Appointment Series Schedule
+export { default as AppointmentSeriesSchedule } from "./AppointmentSeriesSchedule/AppointmentSeriesSchedule";
+
 // Debug Console
 export { default as DebugConsole } from "./DebugConsole/DebugConsole";
 
@@ -42,6 +45,9 @@ export { default as ProfessionalHealthInsurances } from "./ProfessionalHealthIns
 
 // Professional Portal
 export { default as ProfessionalPortal } from "./ProfessionalPortal/ProfessionalPortal";
+
+// Professional Leave
+export { default as ProfessionalLeave } from "./ProfessionalLeave/ProfessionalLeave";
 
 // Register
 export { default as Register } from "./Register/Register";

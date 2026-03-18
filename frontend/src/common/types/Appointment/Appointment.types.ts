@@ -23,6 +23,7 @@ export type Appointment = {
   patient?: number;
   legalGuardian?: number;
   healthInsurance?: number;
+  series?: number;
 };
 
 export type PopulatedAppointment = {
@@ -36,4 +37,9 @@ export type PopulatedAppointment = {
   legalGuardian?: LegalGuardian;
   healthInsurance?: HealthInsurance;
   consultingRoom?: simpleConsultingRoom;
+  series?: {
+    id: number;
+    validMonth: number;
+    validYear: number;
+  };
 };

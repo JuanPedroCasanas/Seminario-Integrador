@@ -100,6 +100,24 @@ export default function LegalGuardianAppointmentsCard() {
     return { upcoming, past };
   }, [appointments]);
 
+  // Agrupar turnos por tipo: sostenidos (con series) vs únicos (sin series)
+  const groupBySeries = (apps: PopulatedAppointment[]) => {
+    const seriesMap = new Map<number, PopulatedAppointment[]>();
+    const singles: PopulatedAppointment[] = [];
+
+    for (const a of apps) {
+      if (a.series?.id) {
+        const existing = seriesMap.get(a.series.id) || [];
+        existing.push(a);
+        seriesMap.set(a.series.id, existing);
+      } else {
+        singles.push(a);
+      }
+    }
+
+    return { seriesMap, singles };
+  };
+
   // Cancelar turno
   const cancelAppointment = async (idAppointment: number) => {
     if (!confirm("¿Confirmás cancelar este turno?")) return;
@@ -243,6 +261,94 @@ export default function LegalGuardianAppointmentsCard() {
     );
   };
 
+  // Renderizar una serie de turnos sostenidos (agrupados)
+  const renderSeriesItem = (seriesId: number, seriesAppointments: PopulatedAppointment[], section: 'upcoming' | 'past') => {
+    const first = seriesAppointments[0];
+    if (!first?.series) return null;
+
+    const { validMonth, validYear } = first.series;
+    const monthName = new Date(validYear, validMonth - 1).toLocaleDateString('es-AR', { month: 'long' });
+    const monthLabel = `${capitalize(monthName)} ${validYear}`;
+
+    // Obtener día de la semana y hora del primer turno
+    const firstDate = new Date(first.startTime ?? '');
+    const dayOfWeek = capitalize(firstDate.toLocaleDateString('es-AR', { weekday: 'long' }));
+    const time = firstDate.toLocaleTimeString('es-AR', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: false,
+    });
+
+    const allCanceled = seriesAppointments.every(a => a.status === 'canceled');
+    const someCanceled = seriesAppointments.some(a => a.status === 'canceled');
+
+    return (
+      <li
+        key={`series-${seriesId}`}
+        className="rounded-lg border border-cyan-300 bg-cyan-50 px-3 py-2 shadow-sm hover:bg-cyan-100 transition"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-2 mb-1">
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-bold bg-cyan-600 text-white">
+                TURNO SOSTENIDO
+              </span>
+            </div>
+            
+            <p className="text-sm text-gray-900">
+              <span className="font-medium">{fullNameProfessional(first.professional)}</span>
+              {first.professional?.occupation?.name ? <span className="text-gray-500"> • {first.professional?.occupation?.name}</span> : null}
+            </p>
+
+            {/* Paciente a cargo */}
+            <p className="text-sm text-gray-700">
+              <span className="font-medium">Paciente:</span>{" "}
+              <span className="text-gray-700">{fullNamePatient(first) || "—"}</span>
+            </p>
+            
+            <p className="text-sm text-gray-700 font-medium">Todos los {dayOfWeek.toLowerCase()} a las {time}hs</p>
+            <p className="text-sm text-gray-600">Válido para {monthLabel}</p>
+            <p className="text-[12px] text-gray-500">{seriesAppointments.length} turno{seriesAppointments.length > 1 ? 's' : ''} en esta serie</p>
+            <p className="text-[12px] text-gray-500">{first.consultingRoom?.description}</p>
+          </div>
+
+          <div className="shrink-0 flex flex-col items-end gap-2">
+            {allCanceled ? (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold border bg-gray-50 text-gray-600 border-gray-200">
+                Cancelado
+              </span>
+            ) : someCanceled ? (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold border bg-yellow-50 text-yellow-700 border-yellow-200">
+                Parcialmente cancelado
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold border bg-cyan-50 text-cyan-700 border-cyan-200">
+                Reservado
+              </span>
+            )}
+
+            {section === 'upcoming' && !allCanceled && (
+              <button
+                onClick={() => {
+                  if (confirm(`¿Confirmás cancelar TODOS los ${seriesAppointments.length} turnos de esta serie?`)) {
+                    seriesAppointments.forEach(a => {
+                      if (a.status === 'scheduled') {
+                        cancelAppointment(a.id!);
+                      }
+                    });
+                  }
+                }}
+                className="text-xs px-2 py-1 rounded border border-red-600 text-red-600 hover:bg-red-50 transition"
+              >
+                Cancelar serie
+              </button>
+            )}
+          </div>
+        </div>
+      </li>
+    );
+  };
+
   // Render principal
   return (
     <div>
@@ -273,24 +379,86 @@ export default function LegalGuardianAppointmentsCard() {
         )}
 
         {/* Próximos */}
-        {!loading && upcoming.length > 0 && (
-          <section className="mb-4">
-            <h4 className="text-sm font-semibold text-gray-800 mb-2">
-              Próximos
-            </h4>
-            <ul className="space-y-3">{upcoming.map(renderUpcomingItem)}</ul>
-          </section>
-        )}
+        {!loading && upcoming.length > 0 && (() => {
+          const { seriesMap, singles } = groupBySeries(upcoming);
+          return (
+            <section className="mb-4">
+              <h4 className="text-sm font-semibold text-gray-800 mb-2">
+                Próximos
+              </h4>
+              
+              {/* Dos columnas */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Columna izquierda: Turnos Sostenidos */}
+                <div>
+                  <h5 className="text-xs font-semibold text-cyan-700 uppercase mb-2">Turnos Sostenidos</h5>
+                  {seriesMap.size > 0 ? (
+                    <ul className="space-y-3">
+                      {Array.from(seriesMap.entries()).map(([seriesId, apps]) =>
+                        renderSeriesItem(seriesId, apps, 'upcoming')
+                      )}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No hay turnos sostenidos</p>
+                  )}
+                </div>
+
+                {/* Columna derecha: Turnos Únicos */}
+                <div>
+                  <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2">Turnos Únicos</h5>
+                  {singles.length > 0 ? (
+                    <ul className="space-y-3">
+                      {singles.map(renderUpcomingItem)}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No hay turnos únicos</p>
+                  )}
+                </div>
+              </div>
+            </section>
+          );
+        })()}
 
         {/* Anteriores */}
-        {!loading && past.length > 0 && (
-          <section>
-            <h4 className="text-sm font-semibold text-gray-800 mb-2">
-              Anteriores
-            </h4>
-            <ul className="space-y-3">{past.map(renderPastItem)}</ul>
-          </section>
-        )}
+        {!loading && past.length > 0 && (() => {
+          const { seriesMap, singles } = groupBySeries(past);
+          return (
+            <section>
+              <h4 className="text-sm font-semibold text-gray-800 mb-2">
+                Anteriores
+              </h4>
+              
+              {/* Dos columnas */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                {/* Columna izquierda: Turnos Sostenidos */}
+                <div>
+                  <h5 className="text-xs font-semibold text-cyan-700 uppercase mb-2">Turnos Sostenidos</h5>
+                  {seriesMap.size > 0 ? (
+                    <ul className="space-y-3">
+                      {Array.from(seriesMap.entries()).map(([seriesId, apps]) =>
+                        renderSeriesItem(seriesId, apps, 'past')
+                      )}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No hay turnos sostenidos anteriores</p>
+                  )}
+                </div>
+
+                {/* Columna derecha: Turnos Únicos */}
+                <div>
+                  <h5 className="text-xs font-semibold text-gray-700 uppercase mb-2">Turnos Únicos</h5>
+                  {singles.length > 0 ? (
+                    <ul className="space-y-3">
+                      {singles.map(renderPastItem)}
+                    </ul>
+                  ) : (
+                    <p className="text-sm text-gray-500 italic">No hay turnos únicos anteriores</p>
+                  )}
+                </div>
+              </div>
+            </section>
+          );
+        })()}
       </div>
 
       {/* Toast */}

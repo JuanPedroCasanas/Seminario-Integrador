@@ -17,6 +17,7 @@ export { FilterBar } from "./DataDisplay/FilterBar/FilterBar";
 // PatientAppointmentCard
 export { default as PatientAppointmentsCard } from "./DataDisplay/PatientAppointmentsCard/PatientAppointmentsCard";
 export { default as LegalGuardianAppointmentsCard } from "./DataDisplay/LegalGuardianAppointmentsCard/LegalGuardianAppointmentsCard";
+export { default as ProfessionalLeavesCard } from "./DataDisplay/ProfessionalLeavesCard/ProfessionalLeavesCard";
 
 // Feedback
 export { default as EmptyState } from "./Feedback/EmptyState/EmptyState";
@@ -26,8 +27,13 @@ export { Toast } from "./Feedback/Toast/toast";
 // Schedule
 export { CalendarGrid } from './Schedule/CalendarGrid/CalendarGrid';
 export { ConfirmBookingModal } from './Schedule/ConfirmBookingModal/ConfirmBookingModal';
+export { ConfirmSeriesModal } from './Schedule/ConfirmSeriesModal/ConfirmSeriesModal';
+export { ConfirmLeaveModal } from './Schedule/ConfirmLeaveModal/ConfirmLeaveModal';
+export { DateRangeCalendar } from './Schedule/DateRangeCalendar/DateRangeCalendar';
 export { SlotsCarousel } from './Schedule/SlotsCarousel/SlotsCarousel';
 export { StickyCTA } from './Schedule/StickyCTA/StickyCTA';
+export { TimeSlotGrid } from './Schedule/TimeSlotGrid/TimeSlotGrid';
+export { WeekdaySelector } from './Schedule/WeekdaySelector/WeekdaySelector';
 
 // Forms
 export { FormField } from "./Forms/FormField/FormField";

@@ -183,7 +183,7 @@ export class AppointmentService {
         if(!patient) {
             throw new NotFoundError('Paciente');
         }
-        const appointments = await em.find(Appointment, { patient :  patient }, { populate: ['patient', 'module.consultingRoom', 'professional', 'professional.occupation', 'legalGuardian', 'healthInsurance'] });
+        const appointments = await em.find(Appointment, { patient :  patient }, { populate: ['patient', 'module.consultingRoom', 'professional', 'professional.occupation', 'legalGuardian', 'healthInsurance', 'series'] });
         return appointments.map(toDetailedAppointmentDTO);
     }
 
@@ -193,7 +193,7 @@ export class AppointmentService {
         if(!legalGuardian) {
             throw new NotFoundError('Paciente');
         }
-        const appointments = await em.find(Appointment, { legalGuardian :  legalGuardian }, { populate: ['patient', 'module.consultingRoom', 'professional', 'professional.occupation', 'legalGuardian', 'healthInsurance'] });
+        const appointments = await em.find(Appointment, { legalGuardian :  legalGuardian }, { populate: ['patient', 'module.consultingRoom', 'professional', 'professional.occupation', 'legalGuardian', 'healthInsurance', 'series'] });
         return appointments.map(toDetailedAppointmentDTO);
     }
 

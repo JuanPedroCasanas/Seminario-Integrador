@@ -18,6 +18,8 @@ export default function PatientPortal() {
 
         <NavButton to="/appointment-schedule">Reservar turno</NavButton>
 
+        <NavButton to="/appointment-series-schedule">Reservar turno sostenido</NavButton>
+
         <NavButton to="/edit-profile">Editar perfil</NavButton>
 
       </ActionGrid>

@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Layout/Navbar/Navbar";
 import { UserRole } from "./common/types";
 
-import { Home, Login, Register, ModuleRent, AppointmentSchedule, EditProfile, ProfessionalPortal, LegalGuardianPortal, PatientPortal, GuardedPatients, ModuleList, AppointmentList, DebugConsole, ConsultingRooms, HealthInsurances, Occupations,
+import { Home, Login, Register, ModuleRent, AppointmentSchedule, AppointmentSeriesSchedule, ProfessionalLeave, EditProfile, ProfessionalPortal, LegalGuardianPortal, PatientPortal, GuardedPatients, ModuleList, AppointmentList, DebugConsole, ConsultingRooms, HealthInsurances, Occupations,
 Professionals, ProfessionalHealthInsurances
 } from "./pages";
 
@@ -55,6 +55,9 @@ export default function App() {
           <Route path="/appointment-list" element=
             {<AppointmentList/>} />
 
+          <Route path="/professional-leave" element=
+            {<ProfessionalLeave />} />
+
         </Route>
           
         {/* RESPONSABLE LEGAL */}
@@ -82,6 +85,8 @@ export default function App() {
         <Route element={<ProtectedRoute roles={[UserRole.LegalGuardian, UserRole.Patient, UserRole.Admin]} />}>
           <Route path="/appointment-schedule" element=
             {<AppointmentSchedule />} />
+          <Route path="/appointment-series-schedule" element=
+            {<AppointmentSeriesSchedule />} />
         </Route>
 
         {/* ADMIN */}

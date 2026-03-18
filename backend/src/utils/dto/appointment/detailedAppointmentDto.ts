@@ -2,6 +2,7 @@ import { Appointment } from "../../../model/entities/Appointment";
 import { LegalGuardian } from "../../../model/entities/LegalGuardian";
 import { Patient } from "../../../model/entities/Patient";
 import { Professional } from "../../../model/entities/Professional";
+import { wrap } from "@mikro-orm/core";
 
 export interface DetailedAppointmentDTO {
   // Appointment
@@ -26,11 +27,25 @@ export interface DetailedAppointmentDTO {
     id: number;
     description: string;
   };
+
+  series?: {
+    id: number;
+    validMonth: number;
+    validYear: number;
+  } | undefined;
 }
 
 export function toDetailedAppointmentDTO(
   appointment: Appointment
 ): DetailedAppointmentDTO {
+  // Obtener series usando wrap para asegurar que esté inicializada
+  const series = appointment.series;
+  const seriesData = series && wrap(series).isInitialized() ? {
+    id: series.id,
+    validMonth: series.validMonth,
+    validYear: series.validYear,
+  } : undefined;
+
   return {
     // Appointment
     id: appointment.id,
@@ -58,6 +73,9 @@ export function toDetailedAppointmentDTO(
       id: appointment.module.consultingRoom.id,
       description: appointment.module.consultingRoom.description,
     },
+
+    // Series (solo si existe)
+    series: seriesData,
   };
 }
 
