@@ -125,6 +125,65 @@ export class AppointmentService {
         return matchingAppointments;
     }
 
+    static async renewAppointmentSeries(idSeries: number) {
+        const em = await getORM().em.fork();
+
+        const series = await em.findOne(
+            AppointmentSeries,
+            { id: idSeries },
+            { populate: ['appointments', 'appointments.professional'] }
+        );
+
+        if (!series) {
+            throw new NotFoundError('Turno sostenido (Serie)');
+        }
+
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+
+        if (
+            series.validMonth !== currentMonth ||
+            series.validYear !== currentYear
+        ) {
+            throw new AppointmentSeriesNotAvailableError("No puede renovarse un turno sostenido de un mes anterior al actual");
+        }
+
+        if (series.appointments.length === 0) {
+            throw new AppointmentSeriesNotAvailableError("Serie no disponible, contacte un administrador");
+        }
+
+        const baseAppointment = series.appointments[0];
+
+        const professional = baseAppointment.professional;
+        const day = baseAppointment.startTime.getDay() as DayOfWeek;
+        const hour = baseAppointment.startTime.getHours();
+
+        const patient = baseAppointment.patient;
+
+        if (!patient) {
+            throw new NotFoundError('Paciente');
+        }
+
+        let nextMonth = series.validMonth + 1;
+        let nextYear = series.validYear;
+
+        if (nextMonth > 12) {
+            nextMonth = 1;
+            nextYear++;
+        }
+
+        return await this.assignAppointmentSeries(
+            professional.id,
+            patient.id,
+            day,
+            hour,
+            nextMonth,
+            nextYear
+        );
+        
+    }
+
     static async updateAppointmentStatus(idAppointment: number, newStatus:string) {
         const em = await getORM().em.fork();
 
@@ -248,5 +307,143 @@ export class AppointmentService {
         );
 
         return appointments;
+    }
+
+    static async getAppointmentSequencesByPatient(idPatient: number) {
+        const em = await getORM().em.fork();
+
+        const patient = await em.findOne(Patient, { id: idPatient });
+        if (!patient) {
+            throw new NotFoundError('Paciente');
+        }
+
+        const appointments = await em.find(
+            Appointment,
+            { patient: patient, series: { $ne: null } },
+            { populate: ['series'] }
+        );
+
+        // obtener IDs únicos de series
+        const uniqueSeriesIds = [
+            ...new Set(appointments.map(a => a.series!.id))
+        ];
+
+        // traer las series completas
+        const series = await em.find(
+            AppointmentSeries,
+            { id: { $in: uniqueSeriesIds } },
+            { populate: ['appointments', 'appointments.professional', 'appointments.module.consultingRoom'] }
+        );
+
+        return series;
+    }
+
+    static async getAppointmentSequencesByLegalGuardian(idLegalGuardian: number) {
+        const em = await getORM().em.fork();
+
+        const legalGuardian = await em.findOne(LegalGuardian, { id: idLegalGuardian });
+        if (!legalGuardian) {
+            throw new NotFoundError('Paciente');
+        }
+
+        const appointments = await em.find(
+            Appointment,
+            { legalGuardian: legalGuardian, series: { $ne: null } },
+            { populate: ['series'] }
+        );
+
+        const uniqueSeriesIds = [
+            ...new Set(appointments.map(a => a.series!.id))
+        ];
+
+        const series = await em.find(
+            AppointmentSeries,
+            { id: { $in: uniqueSeriesIds } },
+            { populate: ['appointments', 'appointments.professional', 'appointments.module.consultingRoom', 'appointments.patient'] }
+        );
+
+        return series;
+    }
+
+    static async getCurrentAppointmentSequencesByPatient(idPatient: number) {
+        const em = await getORM().em.fork();
+
+        const patient = await em.findOne(Patient, { id: idPatient });
+        if (!patient) {
+            throw new NotFoundError('Paciente');
+        }
+
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+
+        const appointments = await em.find(
+            Appointment,
+            { 
+                patient: patient,
+                series: { $ne: null }
+            },
+            { populate: ['series'] }
+        );
+
+        const uniqueSeriesIds = [
+            ...new Set(
+                appointments
+                    .filter(a =>
+                        a.series!.validMonth === currentMonth &&
+                        a.series!.validYear === currentYear
+                    )
+                    .map(a => a.series!.id)
+            )
+        ];
+
+        const series = await em.find(
+            AppointmentSeries,
+            { id: { $in: uniqueSeriesIds } },
+            { populate: ['appointments', 'appointments.professional', 'appointments.module.consultingRoom'] }
+        );
+
+        return series;
+    }
+
+    static async getCurrentAppointmentSequencesByLegalGuardian(idLegalGuardian: number) {
+        const em = await getORM().em.fork();
+
+        const legalGuardian = await em.findOne(LegalGuardian, { id: idLegalGuardian });
+        if (!legalGuardian) {
+            throw new NotFoundError('Paciente');
+        }
+
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+
+        const appointments = await em.find(
+            Appointment,
+            { 
+                legalGuardian: legalGuardian,
+                series: { $ne: null }
+            },
+            { populate: ['series'] }
+        );
+
+        const uniqueSeriesIds = [
+            ...new Set(
+                appointments
+                    .filter(a =>
+                        a.series!.validMonth === currentMonth &&
+                        a.series!.validYear === currentYear
+                    )
+                    .map(a => a.series!.id)
+            )
+        ];
+
+        const series = await em.find(
+            AppointmentSeries,
+            { id: { $in: uniqueSeriesIds } },
+            { populate: ['appointments', 'appointments.professional', 'appointments.module.consultingRoom', 'appointments.patient'] }
+        );
+
+        return series;
     }
 }

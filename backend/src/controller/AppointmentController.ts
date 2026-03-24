@@ -55,6 +55,27 @@ export class AppointmentController {
         }
     }
 
+    static async renewAppointmentSeries(req: Request, res: Response) {
+        const idSeries = Number(req.params.idSeries);
+        try {
+            const appointment = await AppointmentService.renewAppointmentSeries(idSeries);
+
+            return res.status(200).json({
+                message: 'Se renovo correctamente el turno sostenido del paciente',
+                appointment: safeSerialize(appointment)
+            });
+
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al renovar turno sostenido' });
+            }
+        }
+    }
+
     //Solo los profesionales pueden completar turnos
     static async updateAppointmentStatus(req: Request, res: Response) {
         const { idAppointment, status } = req.body;
@@ -191,6 +212,76 @@ export class AppointmentController {
             }
             else {
                 return res.status(500).json({ message: 'Error al buscar los profesionales' });
+            }
+        }
+    }
+
+    static async getAppointmentSequencesByPatient(req: Request, res: Response) {
+        const idPatient = Number(req.params.idPatient);
+        try {
+            const appointments = await AppointmentService.getAppointmentSequencesByPatient(idPatient);
+
+            return res.status(200).json(safeSerialize(appointments));
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al buscar turnos por paciente' });
+            }
+        }
+    }
+
+
+    static async getAppointmentSequencesByLegalGuardian(req: Request, res: Response) {
+        const idLegalGuardian = Number(req.params.idLegalGuardian);
+        try {
+            const appointments = await AppointmentService.getAppointmentSequencesByLegalGuardian(idLegalGuardian);
+
+            return res.status(200).json(safeSerialize(appointments));
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al buscar turnos por responsable legal' });
+            }
+        }
+    }
+
+    static async getCurrentAppointmentSequencesByPatient(req: Request, res: Response) {
+        const idPatient = Number(req.params.idPatient);
+        try {
+            const appointments = await AppointmentService.getCurrentAppointmentSequencesByPatient(idPatient);
+
+            return res.status(200).json(safeSerialize(appointments));
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al buscar turnos por paciente' });
+            }
+        }
+    }
+
+
+    static async getCurrentAppointmentSequencesByLegalGuardian(req: Request, res: Response) {
+        const idLegalGuardian = Number(req.params.idLegalGuardian);
+        try {
+            const appointments = await AppointmentService.getCurrentAppointmentSequencesByLegalGuardian(idLegalGuardian);
+
+            return res.status(200).json(safeSerialize(appointments));
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al buscar turnos por responsable legal' });
             }
         }
     }

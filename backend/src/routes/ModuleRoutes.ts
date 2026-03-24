@@ -7,6 +7,7 @@ import { getCurrentMonthModulesByConsultingRoomModuleSchema } from '../utils/val
 import { authJwt } from '../utils/auth/jwt';
 import { authRoles } from '../utils/auth/roles';
 import { UserRole } from '../utils/enums/UserRole';
+import { renewModulesSchema } from '../utils/validations/schema/module/renewModulesSchema';
 
 const router = express.Router();
 
@@ -65,6 +66,23 @@ router.post(
   authJwt,
   authRoles([UserRole.Professional, UserRole.Admin]),
   ModuleController.addModules
+);
+
+/**
+ * @swagger
+ * /module/renew:
+ *   post:
+ *     summary: Renovar uno o varios Módulos (Horario de atención)
+ *     tags: [Módulos]
+ *     requestBody:
+ *       required: true
+ */
+router.post(
+  '/renew',
+  validate(renewModulesSchema),
+  authJwt,
+  authRoles([UserRole.Professional, UserRole.Admin]),
+  ModuleController.renewModules
 );
 
 /**

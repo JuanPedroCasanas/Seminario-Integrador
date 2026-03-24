@@ -11,6 +11,7 @@ import { authJwt } from '../utils/auth/jwt';
 import { UserRole } from '../utils/enums/UserRole';
 import { getByLegalGuardianAppointmentSchema } from '../utils/validations/schema/appointment/getByLegalGuardianAppointmentSchema';
 import { assignAppointmentSeriesSchema } from '../utils/validations/schema/appointment/assignAppointmentSeriesSchema';
+import { renewAppointmentSeriesSchema } from '../utils/validations/schema/appointment/renewAppointmentSeriesSchema';
 
 const router = express.Router();
 
@@ -68,6 +69,21 @@ router.post(
   authJwt,
   authRoles([UserRole.Patient, UserRole.LegalGuardian, UserRole.Admin]),
   AppointmentController.assignAppointmentSeries
+);
+
+/**
+ * @swagger
+ * /appointment/renewSeries:
+ *   post:
+ *     summary: Renovar un turno sostenido para un paciente, del mes actual, hacia el mes que viene
+ *     tags: [Turnos]
+ */
+router.post(
+  '/renewSeries/:idSeries',
+  validate(renewAppointmentSeriesSchema),
+  //authJwt,
+  //authRoles([UserRole.Patient, UserRole.LegalGuardian, UserRole.Admin]),
+  AppointmentController.renewAppointmentSeries
 );
 
 /**
@@ -391,6 +407,174 @@ router.get(
   validate(getByLegalGuardianAppointmentSchema),
   authJwt,
   AppointmentController.getAppointmentsByLegalGuardian
+);
+
+/**
+ * @swagger
+ * /appointment/getAppointmentSequencesByPatient/{idPatient}:
+ *   get:
+ *     summary: Historial de turnos sostenidos de un paciente específico
+ *     tags: [Turnos]
+ *     parameters:
+ *       - in: path
+ *         name: idPatient
+ *         required: true
+ *         description: ID del paciente a consultar
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Historial de turnos encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   startTime:
+ *                     type: string
+ *                     format: date-time
+ *                   status:
+ *                     type: string
+ *                   professional:
+ *                     type: object
+ *       404:
+ *         description: Paciente no encontrado
+ */
+router.get(
+  '/getAppointmentSequencesByPatient/:idPatient',
+  validate(getByPatientAppointmentSchema),
+  //authJwt,  
+  AppointmentController.getAppointmentSequencesByPatient
+);
+
+/**
+ * @swagger
+ * /appointment/getAppointmentSequencesByLegalGuardian/{idLegalGuardian}:
+ *   get:
+ *     summary: Historial de turnos sostenidos de los pacientes de un Responsable Legal
+ *     tags: [Turnos]
+ *     parameters:
+ *       - in: path
+ *         name: idLegalGuardian
+ *         required: true
+ *         description: ID del Responsable Legal a consultar
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Turnos del Responsable Legal encontrados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   startTime:
+ *                     type: string
+ *                     format: date-time
+ *                   status:
+ *                     type: string
+ *                   patient:
+ *                     type: object
+ *       404:
+ *         description: Responsable Legal no encontrado
+ */
+router.get(
+  '/getAppointmentSequencesByLegalGuardian/:idLegalGuardian',
+  validate(getByLegalGuardianAppointmentSchema),
+  //authJwt,
+  AppointmentController.getAppointmentSequencesByLegalGuardian
+);
+
+/**
+ * @swagger
+ * /appointment/getCurrentAppointmentSequencesByPatient/{idPatient}:
+ *   get:
+ *     summary: Turnos sostenidos del mes actual de un paciente específico
+ *     tags: [Turnos]
+ *     parameters:
+ *       - in: path
+ *         name: idPatient
+ *         required: true
+ *         description: ID del paciente a consultar
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Historial de turnos encontrado
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   startTime:
+ *                     type: string
+ *                     format: date-time
+ *                   status:
+ *                     type: string
+ *                   professional:
+ *                     type: object
+ *       404:
+ *         description: Paciente no encontrado
+ */
+router.get(
+  '/getCurrentAppointmentSequencesByPatient/:idPatient',
+  validate(getByPatientAppointmentSchema),
+  //authJwt,  
+  AppointmentController.getCurrentAppointmentSequencesByPatient
+);
+
+/**
+ * @swagger
+ * /appointment/getCurrentAppointmentSequencesByLegalGuardian/{idLegalGuardian}:
+ *   get:
+ *     summary: turnos sostenidos del mes vigente de los pacientes de un Responsable Legal
+ *     tags: [Turnos]
+ *     parameters:
+ *       - in: path
+ *         name: idLegalGuardian
+ *         required: true
+ *         description: ID del Responsable Legal a consultar
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Turnos del Responsable Legal encontrados
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   startTime:
+ *                     type: string
+ *                     format: date-time
+ *                   status:
+ *                     type: string
+ *                   patient:
+ *                     type: object
+ *       404:
+ *         description: Responsable Legal no encontrado
+ */
+router.get(
+  '/getCurrentAppointmentSequencesByLegalGuardian/:idLegalGuardian',
+  validate(getByLegalGuardianAppointmentSchema),
+  //authJwt,
+  AppointmentController.getCurrentAppointmentSequencesByLegalGuardian
 );
 
 

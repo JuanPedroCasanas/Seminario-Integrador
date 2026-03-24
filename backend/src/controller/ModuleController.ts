@@ -44,6 +44,30 @@ export default class ModuleController {
         }
     }
 
+    static async renewModules(req: Request, res: Response) {
+        let {
+            moduleIds
+        } = req.body;
+
+        try {
+            const modules = await ModuleService.renewModules(moduleIds);
+
+            return res.status(201).json({
+                message: 'Modulos correctamente renovados',
+                modules: safeSerialize(modules)
+            });
+
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al renovar los modulos' });
+            }
+        }
+    }
+
     static async getModule(req: Request, res: Response) {
         const idModule = Number(req.params.idModule);
 

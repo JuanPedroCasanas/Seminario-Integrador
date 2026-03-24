@@ -45,3 +45,7 @@ export const validYear = z
   .int()
   .positive();
 
+  export const moduleIds = z
+      .array(z.number())
+      .nonempty("Debe enviar al menos un id de módulo");
+

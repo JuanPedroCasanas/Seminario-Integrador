@@ -7,7 +7,7 @@ import { Appointment } from '../model/entities/Appointment';
 import { AppointmentStatus } from '../utils/enums/AppointmentStatus';
 import { ModuleStatus } from '../utils/enums/ModuleStatus';
 import { DayOfWeek } from '../utils/enums/DayOfWeek';
-import { BaseHttpError, ModuleScheduleConflictError, NotConfiguredError, NotFoundError } from '../utils/errors/BaseHttpError';
+import { BaseHttpError, ModuleScheduleConflictError, NotConfiguredError, NotFoundError, InvalidParameterError } from '../utils/errors/BaseHttpError';
 
 export default class ModuleService {
 
@@ -215,5 +215,89 @@ export default class ModuleService {
         });
 
         return modules;
+    }
+
+    static async renewModules(moduleIds: number[]) {
+        const em = await getORM().em.fork();
+
+        if (!moduleIds || moduleIds.length === 0) {
+            throw new InvalidParameterError('moduleIds (Arreglo vacio)');
+        }
+
+        const modules = await em.find(
+            Module,
+            { id: { $in: moduleIds } },
+            { populate: ['professional', 'consultingRoom'] }
+        );
+
+        if (modules.length === 0) {
+            throw new NotFoundError('Modulos');
+        }
+
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+
+        for (const mod of modules) {
+            if (mod.validMonth !== currentMonth || mod.validYear !== currentYear) {
+                throw new InvalidParameterError('Solo se pueden renovar modulos del mes vigente');
+            }
+        }
+
+        for (const mod of modules) {
+            if (mod.status === ModuleStatus.ToBePaid || mod.status === ModuleStatus.Canceled) {
+                throw new InvalidParameterError('Solo se pueden renovar modulos que hayan sido pagados');
+            }
+        }
+
+        const professional = modules[0].professional;
+        for (const mod of modules) {
+            if (mod.professional.id !== professional.id) {
+                throw new InvalidParameterError('Modulos de distintos profesionales');
+            }
+        }
+
+        const baseMonth = modules[0].validMonth;
+        const baseYear = modules[0].validYear;
+
+        let nextMonth = baseMonth + 1;
+        let nextYear = baseYear;
+
+        if (nextMonth > 12) {
+            nextMonth = 1;
+            nextYear++;
+        }
+
+        const grouped = new Map<string, Module[]>();
+
+        for (const mod of modules) {
+            const key = `${mod.day}-${mod.consultingRoom.id}-${mod.startTime}-${mod.endTime}`;
+
+            if (!grouped.has(key)) {
+                grouped.set(key, []);
+            }
+
+            grouped.get(key)!.push(mod);
+        }
+
+        const createdModules: Module[] = [];
+
+        for (const group of grouped.values()) {
+            const base = group[0];
+
+            const newModules = await ModuleService.addModules(
+                base.day,
+                base.startTime,
+                base.endTime,
+                nextMonth,
+                nextYear,
+                professional.id,
+                base.consultingRoom.id
+            );
+
+            createdModules.push(...newModules);
+        }
+
+        return createdModules;
     }
 }

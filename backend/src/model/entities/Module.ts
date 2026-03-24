@@ -62,7 +62,7 @@ export class Module {
     this.professional = professional;
     this.consultingRoom = consultingRoom;
     this.moduleType = moduleType;
-    this.status = ModuleStatus.Paid;
+    this.status = ModuleStatus.ToBePaid;
     }
 }
 
