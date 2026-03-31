@@ -50,7 +50,7 @@ export class EntityDisabledError extends BaseHttpError {
 
 export class ModuleScheduleConflictError extends BaseHttpError {
   constructor(startTime: string, endTime: string) {
-    super(409, 'MODULE_SCHEDULE_CONFLICT', `Ya existe un modulo alquilado que conflitua con la hora inicio - fin: '${startTime} - ${endTime}'`);
+    super(409, 'MODULE_SCHEDULE_CONFLICT', `Ya existe un modulo alquilado que conflictua con la hora inicio - fin: '${startTime} - ${endTime}'`);
   }
 }
 
@@ -104,5 +104,11 @@ export class AppointmentNotAvailableError extends BaseHttpError {
 export class AppointmentSeriesNotAvailableError extends BaseHttpError {
   constructor(reason: string = 'No hay horarios disponibles para reservar este turno sostenido') {
     super(409, 'APPOINTMENT_SERIES_UNAVAILABLE', reason);
+  }
+}
+
+export class LeaveScheduleConflictError extends BaseHttpError {
+  constructor(startDate: Date, endDate: Date) {
+    super(409, 'LEAVE_SCHEDULE_CONFLICT', `Ya existe una licencia activa que conflictua con la fecha inicio - fin de la nueva licencia: '${startDate} - ${endDate}'`);
   }
 }

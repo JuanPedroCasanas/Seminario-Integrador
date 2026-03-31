@@ -28,6 +28,7 @@ import ProfessionalRoutes from './routes/ProfessionalRoutes';
 import LegalGuardianRoutes from './routes/LegalGuardianRoutes';
 import UserRoutes from './routes/UserRoutes'
 import HealthInsuranceRoutes from './routes/HealthInsuranceRoutes';
+import LeaveRoutes from './routes/LeaveRoutes';
 import cookieParser from 'cookie-parser';
 import path from 'path';
 import { startingCode } from './startingCode';
@@ -99,6 +100,7 @@ app.use('/user', UserRoutes);
 app.use('/professional', ProfessionalRoutes);
 app.use('/legalGuardian', LegalGuardianRoutes);
 app.use('/healthInsurance', HealthInsuranceRoutes);
+app.use('/leave', LeaveRoutes);
 
 
 

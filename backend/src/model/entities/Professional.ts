@@ -8,6 +8,7 @@ import { Occupation } from './Occupation';
 import { Module } from './Module';
 import { HealthInsurance } from './HealthInsurance';
 import { User } from './User';
+import { Leave } from './Leave';
 @Entity()
 export class Professional {
   @PrimaryKey()
@@ -36,6 +37,9 @@ export class Professional {
 
   @ManyToMany(() => HealthInsurance, healthInsurance => healthInsurance.professionals, {owner: true})
   healthInsurances = new Collection<HealthInsurance>(this);
+
+  @OneToMany(() => Leave, leave => leave.professional)
+  leaves = new Collection<Leave>(this);
 
   @OneToOne(() => User, (u) => u.professional)
   user!: User;

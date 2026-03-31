@@ -4,5 +4,6 @@ export enum AppointmentStatus {
   Completed = "completed",
   Missed = "missed",
   Canceled = "canceled",
+  CanceledDueToLeave = "canceledDueToLeave",
   Expired = "expired",
 }
