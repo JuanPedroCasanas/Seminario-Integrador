@@ -3,6 +3,7 @@ import { UserController } from '../controller/UserController';
 import { validate } from '../utils/validations/validate';
 import { loginSchema } from '../utils/validations/schema/user/loginSchema';
 import { updatePasswordSchema } from '../utils/validations/schema/user/updatePasswordSchema';
+import { updatePasswordDirectSchema } from '../utils/validations/schema/user/updatePasswordDirectSchema';
 import { authJwt } from '../utils/auth/jwt';
 import { authRoles } from '../utils/auth/roles';
 import { UserRole } from '../utils/enums/UserRole';
@@ -123,6 +124,42 @@ router.post(
   authJwt,
   authSelfUserOrAdmin('idUser'),
   UserController.updatePassword
+);
+
+/**
+ * @swagger
+ * /user/updatePasswordDirect:
+ *   post:
+ *     summary: Cambiar la contraseña del usuario sin validar la anterior
+ *     description: Permite actualizar la contraseña sin requerir la contraseña actual.
+ *     tags: [Usuarios]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               idUser:
+ *                 type: string
+ *                 description: ID del usuario al que se le cambiará la clave
+ *               newPassword:
+ *                 type: string
+ *                 description: La nueva contraseña deseada
+ *     responses:
+ *       200:
+ *         description: Contraseña actualizada correctamente
+ *       400:
+ *         description: Datos inválidos
+ *       403:
+ *         description: No tienes permiso para cambiar esta contraseña
+ */
+router.post(
+  '/updatePasswordDirect',
+  validate(updatePasswordDirectSchema),
+  authJwt,
+  authSelfUserOrAdmin('idUser'),
+  UserController.updatePasswordDirect
 );
 
 export default router;

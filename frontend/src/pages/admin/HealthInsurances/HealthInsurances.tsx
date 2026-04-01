@@ -1,23 +1,14 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 import { HealthInsurance } from "@/common/types";
 
-import { Toast, EmptyState, Modal, Table, SummaryList, ActionGrid, PrimaryButton, FormField, Card } from "@/components/ui";
+import { Toast, EmptyState, Modal, Table, ActionGrid, PrimaryButton, FormField, Card } from "@/components/ui";
 import { Page, SectionHeader } from "@/components/Layout";
 
 import { HandleHealthInsuranceControllerResponse  } from "@/common/utils";
 import { authFetch } from "@/common/utils/auth/AuthFetch";
 
 import { API_BASE } from '@/lib/api';
-
-/* ---- Utils  ---- */
-//const uid = () => Math.random().toString(36).slice(2, 10);
-const sameJSON = (a: unknown, b: unknown) => JSON.stringify(a) === JSON.stringify(b);
-const validateHI = (h: Partial<HealthInsurance>) => {
-  const errors: Record<string, string> = {};
-  if (!h.name?.trim()) errors.name = "Nombre obligatorio.";
-  return errors;
-};
 
 export default function HealthInsurances() {
 
@@ -32,7 +23,7 @@ export default function HealthInsurances() {
   useEffect(() => {
   (async () => {
 
-      const res = await authFetch(`${API_BASE}/healthInsurance/getAll`);
+      const res = await authFetch(`${API_BASE}/healthInsurance/getAll?includeInactive=false`);
 
       if (!res.ok){
         const toastData = await HandleHealthInsuranceControllerResponse(res);
@@ -47,91 +38,89 @@ export default function HealthInsurances() {
 }, []);
 
   /* ---- Agregar ---- */
-  const [showAdd, setShowAdd] = useState(false);
-  const [addStep, setAddStep] = useState<"form" | "confirm">("form");
-  const [addForm, setAddForm] = useState<Partial<HealthInsurance>>({ name: "" });
-  const [addSnapshot, setAddSnapshot] = useState<Partial<HealthInsurance> | null>(null);
-  const addErrors = useMemo(() => validateHI(addForm), [addForm]);
+  const [addForm, setAddForm] = useState("");
+  const [addError, setAddError] = useState<{
+    message: string;
+    conflictingEntity?: { id: number; name: string };
+  } | null>(null);
 
-  const openAdd = () => {
-    const initial = { name: "" };
-    setAddForm(initial);
-    setAddSnapshot(initial);
-    setAddStep("form");
-    setShowAdd(true);
-  };
-  const closeAdd = () => setShowAdd(false);
-  const tryCloseAdd = () => {
-    const dirty = !sameJSON(addForm, addSnapshot);
-    if (dirty) setDiscardCtx({ open: true, context: "add" });
-    else closeAdd();
-  };
-
-  const handleAddContinue = (e: React.FormEvent) => {
+  const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (Object.keys(addErrors).length) return;
-    setAddStep("confirm");
-  };
+    const name = addForm.trim();
+    if (!name) return;
 
-  const handleAddConfirm = () => {
+    // Limpiar error previo
+    setAddError(null);
+
     (async () => {
         const res = await authFetch(`${API_BASE}/healthInsurance/add`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: (addForm.name ?? "").trim() }),
+          body: JSON.stringify({ name }),
         });
-
-        const toastData = await HandleHealthInsuranceControllerResponse(res);
-        setToast(toastData);
       
-        // Recargar
-        const resGet = await authFetch(`${API_BASE}/healthInsurance/getAll`);
-        const data: HealthInsurance[] = await resGet.json();
-        setItems(data);
-
-       setShowAdd(false);
-        
-
+        if (res.ok) {
+          // Recargar solo si fue exitoso
+          const resGet = await authFetch(`${API_BASE}/healthInsurance/getAll?includeInactive=false`);
+          const data: HealthInsurance[] = await resGet.json();
+          setItems(data);
+          
+          const toastData = await HandleHealthInsuranceControllerResponse(res);
+          setToast(toastData);
+          
+          // Limpiar el formulario
+          setAddForm("");
+        } else {
+          // Manejar error
+          const errorData = await res.json().catch(() => ({}));
+          
+          if (errorData.code === 'DUPLICATE_HEALTH_INSURANCE' && errorData.conflictingEntity) {
+            setAddError({
+              message: errorData.message,
+              conflictingEntity: errorData.conflictingEntity
+            });
+          } else {
+            // Para otros errores, mostrar en toast
+            const toastData = await HandleHealthInsuranceControllerResponse(res);
+            setToast(toastData);
+          }
+        }
     })();
   };
 
   /* ---- Editar ---- */
   const [editTarget, setEditTarget] = useState<HealthInsurance | null>(null);
-  const [editStep, setEditStep] = useState<"form" | "confirm">("form");
-  const [editForm, setEditForm] = useState<Partial<HealthInsurance>>({});
-  const [editSnapshot, setEditSnapshot] = useState<Partial<HealthInsurance> | null>(null);
-  const editErrors = useMemo(() => validateHI(editForm), [editForm]);
+  const [editForm, setEditForm] = useState("");
+  const [editError, setEditError] = useState<{
+    message: string;
+    conflictingEntity?: { id: number; name: string };
+  } | null>(null);
 
   const openEdit = (h: HealthInsurance) => {
-    const initial = { name: h.name };
     setEditTarget(h);
-    setEditForm(initial);
-    setEditSnapshot(initial);
-    setEditStep("form");
+    setEditForm(h.name);
+    setEditError(null);
   };
   const closeEdit = () => {
     setEditTarget(null);
-    setEditForm({});
-    setEditSnapshot(null);
+    setEditForm("");
+    setEditError(null);
   };
-  const tryCloseEdit = () => {
-    const dirty = !sameJSON(editForm, editSnapshot);
-    if (dirty) setDiscardCtx({ open: true, context: "edit" });
-    else closeEdit();
-  };
-  const handleEditContinue = (e: React.FormEvent) => {
+
+  const handleEditSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (Object.keys(editErrors).length) return;
-    setEditStep("confirm");
-  };
+    if (!editTarget) return;
+    const name = editForm.trim();
+    if (!name) return;
 
-  const handleEditConfirm = () => {
-  if (!editTarget) return;
-  (async () => {
+    // Limpiar error previo
+    setEditError(null);
 
+    (async () => {
       const payload = {
-          idHealthInsurance: editTarget.id, 
-          name: (editForm.name ?? "").trim() };
+        idHealthInsurance: editTarget.id, 
+        name
+      };
 
       const res = await authFetch(`${API_BASE}/healthInsurance/update`, {
         method: "POST",
@@ -139,18 +128,33 @@ export default function HealthInsurances() {
         body: JSON.stringify(payload),
       });
       
-      // Refrescamos localmente
-      setItems((prev) =>
-        prev.map((h) => (h.id === editTarget.id ? { ...h, name: payload.name } : h))
-      ); 
-
-      const toastData = await HandleHealthInsuranceControllerResponse(res);
-      setToast(toastData);
-
-      closeEdit();
-      
-  })();
-};
+      if (res.ok) {
+        // Refrescamos localmente solo si fue exitoso
+        setItems((prev) =>
+          prev.map((h) => (h.id === editTarget.id ? { ...h, name } : h))
+        );
+        
+        const toastData = await HandleHealthInsuranceControllerResponse(res);
+        setToast(toastData);
+        
+        closeEdit();
+      } else {
+        // Manejar error
+        const errorData = await res.json().catch(() => ({}));
+        
+        if (errorData.code === 'DUPLICATE_HEALTH_INSURANCE' && errorData.conflictingEntity) {
+          setEditError({
+            message: errorData.message,
+            conflictingEntity: errorData.conflictingEntity
+          });
+        } else {
+          // Para otros errores, mostrar en toast
+          const toastData = await HandleHealthInsuranceControllerResponse(res);
+          setToast(toastData);
+        }
+      }
+    })();
+  };
 
   /* ---- Eliminar (confirmación simple) ---- */
   const [deleteTarget, setDeleteTarget] = useState<HealthInsurance | null>(null);
@@ -167,7 +171,7 @@ export default function HealthInsurances() {
         });
 
       // Recargar
-        const resGet = await authFetch(`${API_BASE}/healthInsurance/getAll`);
+        const resGet = await authFetch(`${API_BASE}/healthInsurance/getAll?includeInactive=false`);
         const data: HealthInsurance[] = await resGet.json();
         setItems(data);
 
@@ -179,30 +183,16 @@ export default function HealthInsurances() {
     })();
   };
 
-
-  /* ---- Modal: DESCARTAR cambios ---- */
-  const [discardCtx, setDiscardCtx] = useState<{ open: boolean; context?: "add" | "edit" }>({
-    open: false,
-  });
-  const closeDiscard = () => setDiscardCtx({ open: false });
-  const confirmDiscard = () => {
-    if (discardCtx.context === "add") closeAdd();
-    if (discardCtx.context === "edit") closeEdit();
-    setDiscardCtx({ open: false });
-  };
-
-  /* ---- ESC para cerrar (respeta dirty-check) ---- */
+  /* ---- ESC para cerrar ---- */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (discardCtx.open) return closeDiscard();
-      if (showAdd) return tryCloseAdd();
-      if (editTarget) return tryCloseEdit();
+      if (editTarget) return closeEdit();
       if (deleteTarget) return closeDelete();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showAdd, editTarget, deleteTarget, discardCtx.open, addForm, editForm, addSnapshot, editSnapshot]);
+  }, [editTarget, deleteTarget]);
 
   const hasItems = items.length > 0;
 
@@ -225,7 +215,6 @@ export default function HealthInsurances() {
               />
             </svg>
           }
-          action={<PrimaryButton onClick={openAdd}>Agregar obra social</PrimaryButton>}
         />
       )}
 
@@ -233,12 +222,11 @@ export default function HealthInsurances() {
       {hasItems && (
         <>
           <Card>
-            <Table headers={["ID", "Nombre", "Activo", "Acciones"]}>
+            <Table headers={["ID", "Nombre", "Acciones"]}>
               {items.map((h) => (
                 <tr key={h.id} className="even:bg-gray-50 hover:bg-gray-100 transition">
                   <td className="px-4 py-3">{h.id}</td>
                   <td className="px-4 py-3">{h.name}</td>
-                  <td className="px-4 py-3">{h.isActive ? "Sí" : "No"}</td>
                   <td className="px-4 py-3">
                     <div className="flex gap-2">
                       <PrimaryButton variant="outline" size="sm" onClick={() => openEdit(h)}>
@@ -253,131 +241,122 @@ export default function HealthInsurances() {
               ))}
             </Table>
           </Card>
-
-          <div className="grid place-items-center mt-4">
-            <PrimaryButton onClick={openAdd}>Agregar obra social</PrimaryButton>
-          </div>
         </>
       )}
 
-      {/* Modal: Agregar */}
-      {showAdd && (
-        <Modal
-          title={addStep === "form" ? "Agregar obra social" : "Confirmar nueva obra social"}
-          onClose={tryCloseAdd}
-        >
-          {addStep === "form" ? (
-            <form onSubmit={handleAddContinue} className="space-y-4">
-              <FormField label="Nombre" htmlFor="add-nombre">
-                <input
-                  id="add-nombre"
-                  name="name"
-                  type="text"
-                  value={addForm.name ?? ""}
-                  onChange={(e) => setAddForm((f) => ({ ...f, name: e.target.value }))}
-                  className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-cyan-500"
-                  autoFocus
-                />
-                {addErrors.name && <p className="text-red-600 text-sm mt-1">{addErrors.name}</p>}
-              </FormField>
+      {/* Formulario inline para agregar */}
+      <Card className="mt-4">
+        <h3 className="text-lg font-semibold text-gray-800 mb-3">Agregar obra social</h3>
+        
+        <form onSubmit={handleAddSubmit} className="flex gap-2 items-center">
+          <input
+            type="text"
+            value={addForm}
+            onChange={(e) => {
+              setAddForm(e.target.value);
+              // Limpiar error cuando el usuario empieza a escribir
+              if (addError) setAddError(null);
+            }}
+            placeholder="Nombre de la obra social"
+            className="border rounded-lg p-3 flex-1 focus:ring-2 focus:ring-cyan-500"
+          />
+          <PrimaryButton type="submit">Añadir</PrimaryButton>
 
-              <ActionGrid>
-                <PrimaryButton variant="outline" onClick={tryCloseAdd}>
-                  Cancelar
-                </PrimaryButton>
-                <PrimaryButton type="submit">Continuar</PrimaryButton>
-              </ActionGrid>
-            </form>
-          ) : (
-            <>
-              <SummaryList items={[{ label: "Nombre", value: addForm.name ?? "" }]} />
-              <ActionGrid>
-                <PrimaryButton variant="outline" onClick={() => setAddStep("form")}>
-                  Volver
-                </PrimaryButton>
-                <PrimaryButton onClick={handleAddConfirm}>Confirmar</PrimaryButton>
-              </ActionGrid>
-            </>
-          )}
-        </Modal>
-      )}
+        </form>
 
-      {/* Modal: Editar (2 pasos) */}
+         {/* Mostrar error si existe */}
+        {addError && (
+          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 font-semibold mb-2">
+              {addError.message}
+            </p>
+            {addError.conflictingEntity && (
+              <div className="text-sm text-gray-700">
+                <p><strong>ID:</strong> {addError.conflictingEntity.id}</p>
+                <p><strong>Nombre:</strong> {addError.conflictingEntity.name}</p>
+              </div>
+            )}
+          </div>        
+        )}
+      </Card>
+
+
+      {/* Modal: Editar */}
       {editTarget && (
-        <Modal
-          title={editStep === "form" ? "Editar obra social" : "Confirmar cambios"}
-          onClose={tryCloseEdit}
-        >
-          {editStep === "form" ? (
-            <form onSubmit={handleEditContinue} className="space-y-4">
-              <FormField label="Nombre" htmlFor="edit-nombre">
-                <input
-                  id="edit-nombre"
-                  name="name"
-                  type="text"
-                  value={editForm.name ?? ""}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                  className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-cyan-500"
-                  autoFocus
-                />
-                {editErrors.name && <p className="text-red-600 text-sm mt-1">{editErrors.name}</p>}
-              </FormField>
-
-              <ActionGrid>
-                <PrimaryButton variant="outline" onClick={tryCloseEdit}>
-                  Cancelar
-                </PrimaryButton>
-                <PrimaryButton type="submit">Continuar</PrimaryButton>
-              </ActionGrid>
-            </form>
-          ) : (
-            <>
-              <SummaryList
-                items={[
-                  { label: "ID", value: String(editTarget.id) },
-                  { label: "Nombre", value: editForm.name ?? "" },
-                ]}
+        <Modal title="MODIFICAR DATOS OBRA SOCIAL" onClose={closeEdit}>
+          <form onSubmit={handleEditSubmit} className="space-y-4">
+            <div className="mb-4">
+              <p className="text-sm text-gray-600">
+                <strong>ID:</strong> {editTarget.id}
+              </p>
+            </div>
+            
+            <FormField label="Nombre" htmlFor="edit-nombre">
+              <input
+                id="edit-nombre"
+                name="name"
+                type="text"
+                value={editForm}
+                onChange={(e) => {
+                  setEditForm(e.target.value);
+                  // Limpiar error cuando el usuario empieza a escribir
+                  if (editError) setEditError(null);
+                }}
+                className="border rounded-lg p-3 w-full focus:ring-2 focus:ring-cyan-500"
+                autoFocus
               />
-              <ActionGrid>
-                <PrimaryButton variant="outline" onClick={() => setEditStep("form")}>
-                  Volver
-                </PrimaryButton>
-                <PrimaryButton onClick={handleEditConfirm}>Confirmar</PrimaryButton>
-              </ActionGrid>
-            </>
+            </FormField>
+
+            <ActionGrid>
+              <PrimaryButton type="submit">Guardar cambios</PrimaryButton>
+              <PrimaryButton variant="danger" onClick={closeEdit}>
+                Cancelar cambios
+              </PrimaryButton>
+            </ActionGrid>
+          </form>
+
+          {/* Mostrar error si existe */}
+          {editError && (
+            <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-red-600 font-semibold mb-2">
+                {editError.message}
+              </p>
+              {editError.conflictingEntity && (
+                <div className="text-sm text-gray-700">
+                  <p><strong>ID:</strong> {editError.conflictingEntity.id}</p>
+                  <p><strong>Nombre:</strong> {editError.conflictingEntity.name}</p>
+                </div>
+              )}
+            </div>
           )}
+            
+
         </Modal>
       )}
 
       {/* Modal: Eliminar */}
       {deleteTarget && (
-        <Modal title="Eliminar obra social" onClose={closeDelete}>
-          <p className="text-[#213547] mb-2">
-            ¿Estás segura/o de eliminar <strong>{deleteTarget.name}</strong>?
-          </p>
-          <ActionGrid>
-            <PrimaryButton variant="outline" onClick={closeDelete}>
-              Cancelar
-            </PrimaryButton>
-            <PrimaryButton variant="danger" onClick={handleDeleteConfirm}>
-              Eliminar
-            </PrimaryButton>
-          </ActionGrid>
-        </Modal>
-      )}
+        <Modal title="¿Está seguro que desea eliminar la obra social?" onClose={closeDelete}>
+          <div className="space-y-4">            
+            <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+              <p className="text-sm">
+                <strong>ID:</strong> {deleteTarget.id}
+              </p>
+              <p className="text-sm">
+                <strong>Nombre:</strong> {deleteTarget.name}
+              </p>
+            </div>
 
-      {/* Modal: Descartar */}
-      {discardCtx.open && (
-        <Modal title="Descartar cambios" onClose={closeDiscard}>
-          <p className="text-[#213547] mb-2">Tenés cambios sin guardar. ¿Cerrar de todos modos?</p>
-          <ActionGrid>
-            <PrimaryButton variant="outline" onClick={closeDiscard}>
-              Seguir editando
-            </PrimaryButton>
-            <PrimaryButton variant="danger" onClick={confirmDiscard}>
-              Descartar
-            </PrimaryButton>
-          </ActionGrid>
+            <ActionGrid>
+              <PrimaryButton variant="danger" onClick={handleDeleteConfirm}>
+                ELIMINAR OBRA SOCIAL
+              </PrimaryButton>
+              <PrimaryButton variant="outline" onClick={closeDelete}>
+                CANCELAR
+              </PrimaryButton>
+
+            </ActionGrid>
+          </div>
         </Modal>
       )}
 

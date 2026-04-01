@@ -8,6 +8,21 @@ export default function DebugConsolePage() {
   return (
     <Page>
       <SectionHeader
+        title="PORTAL DIRECCION"
+      />
+      <ActionGrid>
+        <NavButton to="/admin/professionals">Ver profesionales</NavButton>
+        <NavButton to="/admin/health-insurances">Ver obras sociales</NavButton>
+      </ActionGrid>
+
+       <ActionGrid>
+        <NavButton to="/module-list">Ver informe de módulos</NavButton>
+        <NavButton to="/appointment-list">Ver informe de turnos</NavButton>
+      </ActionGrid>
+
+      {/* 
+      Cambios anteriores a seminario. Los dejo por las dudas.
+      <SectionHeader
         title="Acciones"
       />
       <ActionGrid>
@@ -39,7 +54,7 @@ export default function DebugConsolePage() {
         <NavButton to="/module-list">Listado de Módulos</NavButton>
         <NavButton to="/appointment-list">Listado de turnos por profesional</NavButton>
       </ActionGrid>
-
+*/}
 
     {toastMessage && (
       <Toast

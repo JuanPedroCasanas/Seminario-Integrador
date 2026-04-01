@@ -1,4 +1,5 @@
 import { useMemo, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 import { Toast, FormField,  InputPassword, PrimaryButton, NavButton, ActionGrid } from "@/components/ui";
 import { Page, SectionHeader } from "@/components/Layout";
@@ -17,11 +18,11 @@ type Role = "Paciente" | "Profesional" | "Responsable Legal" | "";
 
 export default function Register() {
 
+  const navigate = useNavigate();
 
 const [form, setForm] = useState<{
   mail: string;
   password: string;
-  confirmPassword: string;
   firstName: string;
   lastName: string;
   fechaNacimiento: string;
@@ -30,7 +31,6 @@ const [form, setForm] = useState<{
 }>({
   mail: "",
   password: "",
-  confirmPassword: "",
   firstName: "",
   lastName: "",
   fechaNacimiento: "",
@@ -102,10 +102,8 @@ const [form, setForm] = useState<{
   
   
   const [showPwd, setShowPwd] = useState(false);
-  const [showConfirmPwd, setShowConfirmPwd] = useState(false);
   const [message, setMessage] = useState('');      // Para mensajes de éxito o error
   const [isError, setIsError] = useState(false);    // Para marcar si el mensaje es un error
-  const [isLoading, setIsLoading] = useState(false); // Para deshabilitar el botón durante la petición
 
   const todayISO = useMemo(() => new Date().toISOString().split("T")[0], []);
 
@@ -120,17 +118,8 @@ const [form, setForm] = useState<{
     e.preventDefault();
     setMessage('');
     setIsError(false);
-    setIsLoading(true);
 
-    // 1. VALIDACIÓN DE CONTRASEÑAS
-    if (form.password !== form.confirmPassword) {
-        setMessage("Las contraseñas no coinciden.");
-        setIsError(true);
-        setIsLoading(false);
-        return;
-    }
-
-    // 2. MAPEO DE DATOS BASE (DEL USUARIO PRINCIPAL)
+    // 1. MAPEO DE DATOS BASE (DEL USUARIO PRINCIPAL)
     let dataToSend: any = {
         firstName: form.firstName,
         lastName: form.lastName,
@@ -144,7 +133,6 @@ const [form, setForm] = useState<{
 
     if (!form.role) {
         alert("Por favor elegí un rol.");
-        setIsLoading(false);
         return;
     }
     
@@ -157,8 +145,7 @@ const [form, setForm] = useState<{
     if (form.role=== 'Paciente') {
         if (!selectedHealthInsuranceId) {
             setMessage("Por favor elegí una obra social.");
-            setIsError(true); 
-            setIsLoading(false);
+            setIsError(true);
             return;
         }
         endpoint = `${API_BASE}/patient/addIndPatient`;
@@ -169,7 +156,6 @@ const [form, setForm] = useState<{
         if (!selectedOccupationId) {
             setMessage("Por favor elegí una occupation.");
             setIsError(true);
-            setIsLoading(false);
             return;
         }
         endpoint = `${API_BASE}/professional/add`; 
@@ -180,8 +166,7 @@ const [form, setForm] = useState<{
         // Validación de Obra Social del Responsable Legal (se adjunta a dataToSend)
         if (!selectedHealthInsuranceId) {
             setMessage("Por favor elegí una obra social.");
-            setIsError(true); 
-            setIsLoading(false);
+            setIsError(true);
             return;
         }
         
@@ -194,7 +179,6 @@ const [form, setForm] = useState<{
     } else {
         setMessage("Rol no válido.");
         setIsError(true);
-        setIsLoading(false);
         return;
     }
     
@@ -204,12 +188,6 @@ const [form, setForm] = useState<{
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(dataToSend)
       });
-
-      if(response.ok) { //Para no limpiarle toda la form al usuario si sale algo mal
-        setForm({ mail: "", password: "", confirmPassword: "", firstName: "", lastName: "", fechaNacimiento: "", telefono: "", role: "" });
-        setOccupations; 
-        setHealthInsurances;
-      }
 
       let toastData;
 
@@ -223,12 +201,17 @@ const [form, setForm] = useState<{
       if(toastData) {
         setToast(toastData);
       }
+
+      if(response.ok) {
+        // Redirigir a login después de un registro exitoso
+        setTimeout(() => {
+          navigate('/login', { state: { toastMessage: toastData } });
+        }, 1500); // Dar tiempo para ver el toast
+      }
     } catch (error) {
         // Error de red
         setMessage('🚨 Error de conexión: El servidor no está disponible.');
         setIsError(true);
-    } finally {
-        setIsLoading(false); 
     }
 }
  
@@ -240,23 +223,33 @@ const [form, setForm] = useState<{
             {/* Encabezado */}
             <div className="text-center">
                 <SectionHeader
-                    title="Bienvenido a Narrativas"
-                    subtitle="Registrarse"
+                    title="Registro Usuario"
                 />
             </div>
 
-            <NavButton to="/login" variant="ghost">
-                ¿Ya tenés cuenta? Iniciar sesión
-            </NavButton>
-
             {/* Formulario */}
             <form className="grid gap-4" onSubmit={onSubmit} noValidate>
+            
+            {/* Rol */}
+            <FormField label="Tipo de usuario" htmlFor="role">
+                <select
+                id="role"
+                name="role"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black"
+                value={form.role}
+                onChange={handleChange}
+                required
+                >
+                <option>Paciente (mayor de 18 años)</option>
+                <option>Responsable Legal (hijos a cargo)</option>
+                </select>
+            </FormField>
+            
             <FormField label="Nombre" htmlFor="firstName">
                 <input
                 id="firstName"
                 name="firstName"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black placeholder:text-gray-500"
-                placeholder="Tu nombre"
                 value={form.firstName}
                 onChange={handleChange}
                 autoComplete="given-name"
@@ -269,7 +262,6 @@ const [form, setForm] = useState<{
                 id="lastName"
                 name="lastName"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black placeholder:text-gray-500"
-                placeholder="Tu apellido"
                 value={form.lastName}
                 onChange={handleChange}
                 autoComplete="family-name"
@@ -277,59 +269,16 @@ const [form, setForm] = useState<{
                 />
             </FormField>
 
-            <FormField label="Correo electrónico" htmlFor="mail">
+            <FormField label="Mail" htmlFor="mail">
                 <input
                 id="mail"
                 name="mail"
                 type="email"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black placeholder:text-gray-500"
-                placeholder="mail@dominio.com"
+  
                 value={form.mail}
                 onChange={handleChange}
                 autoComplete="email"
-                required
-                />
-            </FormField>
-
-            {/* Contraseña */}
-            <FormField label="Contraseña" htmlFor="password">
-                <InputPassword
-                id="password"
-                name="password"
-                value={form.password}
-                onChange={handleChange}
-                showPwd={showPwd}
-                toggleShowPwd={() => setShowPwd(v => !v)}
-                />
-            </FormField>
-
-            {/* Confirmar contraseña */}
-            <FormField label="Repetir contraseña" htmlFor="confirmPassword">
-                <InputPassword
-                id="confirmPassword"
-                name="confirmPassword"
-                value={form.confirmPassword}
-                onChange={handleChange}
-                showPwd={showConfirmPwd}
-                toggleShowPwd={() => setShowConfirmPwd(v => !v)}
-                />
-                {form.confirmPassword && form.password !== form.confirmPassword && (
-                <small className="text-red-600 mt-1 block">
-                    Las contraseñas no coinciden.
-                </small>
-                )}
-            </FormField>
-
-            {/* Fecha de nacimiento */}
-            <FormField label="Fecha de nacimiento" htmlFor="fechaNacimiento">
-                <input
-                id="fechaNacimiento"
-                name="fechaNacimiento"
-                type="date"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black"
-                value={form.fechaNacimiento}
-                onChange={handleChange}
-                max={todayISO}
                 required
                 />
             </FormField>
@@ -342,7 +291,6 @@ const [form, setForm] = useState<{
                 type="tel"
                 inputMode="tel"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black placeholder:text-gray-500"
-                placeholder="+54 9 341 123 4567"
                 value={form.telefono}
                 onChange={handleChange}
                 autoComplete="tel"
@@ -350,41 +298,19 @@ const [form, setForm] = useState<{
                 />
             </FormField>
 
-            {/* Rol */}
-            <FormField label="Rol" htmlFor="role">
-                <select
-                id="role"
-                name="role"
+            {/* Fecha de nacimiento */}
+            <FormField label="Fecha nacimiento" htmlFor="fechaNacimiento">
+                <input
+                id="fechaNacimiento"
+                name="fechaNacimiento"
+                type="date"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black"
-                value={form.role}
+                value={form.fechaNacimiento}
                 onChange={handleChange}
+                max={todayISO}
                 required
-                >
-                <option>Paciente</option>
-                <option>Responsable Legal</option>
-                <option>Profesional</option>
-                </select>
+                />
             </FormField>
-
-            {/* Especialidad si rol = Profesional */}
-            {form.role === "Profesional" && (
-                <FormField label="Especialidad" htmlFor="occupation">
-                <select
-                    id="occupation"
-                    name="occupation"
-                    className="w-full border border-gray-300 rounded-lg px-4 py-3 text-black"
-                    value={selectedOccupationId ?? ""}
-                    onChange={e => setSelectedOccupationId(Number(e.target.value))}
-                    required
-                >
-                    {occupations.map(g => (
-                    <option key={g.id} value={g.id}>
-                        Id: {g.id}, {g.name}
-                    </option>
-                    ))}
-                </select>
-                </FormField>
-            )}
 
             {/* Obra social si rol = Paciente o Responsable Legal */}
             {(form.role === "Paciente" || form.role === "Responsable Legal") && (
@@ -399,17 +325,29 @@ const [form, setForm] = useState<{
                 >
                     {healthInsurances.map(g => (
                     <option key={g.id} value={g.id}>
-                        Id: {g.id}, {g.name}
+                        {g.name}
                     </option>
                     ))}
                 </select>
                 </FormField>
             )}
 
+            {/* Contraseña */}
+            <FormField label="Contraseña" htmlFor="password">
+                <InputPassword
+                id="password"
+                name="password"
+                value={form.password}
+                onChange={handleChange}
+                showPwd={showPwd}
+                toggleShowPwd={() => setShowPwd(v => !v)}
+                />
+            </FormField>
+
             {/* CTA */}
             <ActionGrid>
-                <PrimaryButton type="submit" disabled={isLoading}>
-                {isLoading ? "Creando..." : "Crear cuenta"}
+                <PrimaryButton type="submit">
+                Registrar usuario
                 </PrimaryButton>
             </ActionGrid>
             </form>

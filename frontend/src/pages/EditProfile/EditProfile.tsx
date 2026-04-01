@@ -17,6 +17,7 @@ import { authFetch } from "@/common/utils/auth/AuthFetch";
 import { API_BASE } from '@/lib/api';
 import { useAuth } from "@/common/utils/auth/AuthContext";
 import { useLogout } from "@/common/utils/auth/UseLogout";
+import { redirectByRole } from "@/common/utils/auth/RoleRedirect";
 
 
 export default function EditProfile() {
@@ -28,15 +29,11 @@ export default function EditProfile() {
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   
   // ----- Estado: credenciales -----
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
 
-  const [showChangePasswordModal, setShowChangePasswordModal] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-
-  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showNewConfirmPassword, setShowNewConfirmPassword] = useState(false);
+  // ----- Estado: modal de confirmación -----
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
 
   // ----- Estado: perfil -----
   const [firstName, setFirstName] = useState<string | undefined>("");
@@ -133,45 +130,14 @@ export default function EditProfile() {
 
 
   // ----- Envíos -----
-  const handleSubmitAuth = async (currentPwd: string, newPwd: string, confirmPwd: string) => {
-    if (newPwd !== confirmPwd) {
-      setToast({ message: "Las contraseñas no coinciden", type: "error" });
-      return;
-    }
-    if(!selectedUser) {
-      return;
-    }
-    const payload = {
-          idUser: selectedUser.id,
-          oldPassword: currentPassword,
-          newPassword: confirmPwd,
-    }
-
-    const res = await authFetch(`${API_BASE}/user/updatePassword`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload),
-    });
-
-    let toastData = await HandleUserControllerResponse(res);
-
-    if(toastData) {
-      setToast(toastData);
-    }
-
-    closeSubmitAuth()
-  };
-
-  const closeSubmitAuth = () => {
-    setCurrentPassword("");
-    setNewPassword("");
-    setConfirmPassword("");
-    setShowChangePasswordModal(false);
-  }
-
-
   const handleSubmitProfile = async (e: React.FormEvent) => {
     e.preventDefault();
+    if(!selectedUser) return;
+    // Abrir modal de confirmación en lugar de enviar directamente
+    setShowConfirmModal(true);
+  };
+
+  const handleConfirmModification = async () => {
     if(!selectedUser) return;
     //Payload general para todas las clases
     let payload = {
@@ -233,112 +199,60 @@ export default function EditProfile() {
     if(toastData) {
       setToast(toastData);
     }
+
+    // Actualizar contraseña si se ingresó una
+    if (password.trim()) {
+      const passwordPayload = {
+        idUser: selectedUser.id,
+        newPassword: password.trim(),
+      };
+      
+      const passwordRes = await authFetch(`${API_BASE}/user/updatePasswordDirect`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(passwordPayload),
+      });
+
+      const passwordToast = await HandleUserControllerResponse(passwordRes);
+      if (passwordToast) {
+        setToast(passwordToast);
+      }
+    }
+
+    setShowConfirmModal(false);
+
+    // Redirigir al portal correspondiente
+    if (res.ok) {
+      const redirectPath = redirectByRole(selectedUser.role);
+      setTimeout(() => {
+        navigate(redirectPath);
+      }, 1500);
+    }
   };
 
   // ----- Cancelar edición -----
   const navigate = useNavigate();
   const handleCancel = () => {
-    // Volver a la pantalla anterior; si no hay historial, ir a la home
-    if (window.history.length > 1) navigate(-1);
-    else navigate("/");
-    // Si NO usás react-router, reemplazá lo de arriba por: window.history.back();
-  };
-
-  // ----- Modal "Borrar perfil" -----
-  const [showConfirmDelete, setShowConfirmDelete] = useState(false);
-  const openConfirmDelete = () => setShowConfirmDelete(true);
-  const closeConfirmDelete = () => setShowConfirmDelete(false);
-
-  const handleConfirmDelete = async () => {
-    setShowConfirmDelete(false);
-    if(!selectedUser) return;
-    //Payload general para todas las clases
-
-    //Id y rutas especificas
-    let id: number | undefined = undefined as number | undefined;
-    let route: string = "";
-    
-    if(selectedUser.patient) {
-      id = selectedUser.patient.id;
-      route = "/patient/delete";
-    }
-
-    if(selectedUser.legalGuardian) {
-      id = selectedUser.legalGuardian.id;
-      route = "/legalGuardian/delete";
-    }
-
-    if(selectedUser.professional) {
-      id = selectedUser.professional.id;
-      route = "/professional/delete";
-    }
-
-    if(!route) {
-      return
-    }
-    const res = await authFetch(`${API_BASE}${route}/${id}`, {
-      method: "DELETE"
-    });
-
-    let toastData;
-
-    if(selectedUser.patient) {
-      toastData = await HandlePatientControllerResponse(res);
-    }
-
-    if(selectedUser.legalGuardian) {
-      toastData = await HandleLegalGuardianControllerResponse(res);
-    }
-
-    if(selectedUser.professional) {
-      toastData = await HandleProfessionalControllerResponse(res);
-    }
-    if(toastData) {
-      setToast(toastData);
-    }
-
-  // esto es para cuando el usuario elimina su propio perfil
-  // le cierra la sesión
-  // pero verifico primero que se haya auto-eliminado para no cerrarle la sesión al admin!
-    const deletedUserId = selectedUser.id;
-    const loggedUserId = user?.id;
-    const isSelfDelete = deletedUserId != null && loggedUserId != null && deletedUserId === loggedUserId;
-
-    if (isSelfDelete && res.ok) {
-      setTimeout(() =>{
-        logout(); 
-      }, 600);
-    };
-
+    const redirectPath = redirectByRole(selectedUser?.role || "");
+    navigate(redirectPath);
   };
 
   // Cerrar modal con ESC
   useEffect(() => {
-    if (!showConfirmDelete) return;
+    if (!showConfirmModal) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowConfirmDelete(false);
+      if (e.key === "Escape") setShowConfirmModal(false);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showConfirmDelete]);
-
-  useEffect(() => {
-    if (!showChangePasswordModal) return;
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setShowChangePasswordModal(false);
-    };
-
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [showChangePasswordModal]);
+  }, [showConfirmModal]);
 
   return (
 
     <Page>
         <main className="grid min-h-screen">
           <section className="max-w-3xl mx-auto p-4 sm:p-6">
-            <SectionHeader title={isAdmin ? "Seleccionar usuario" : "Editar mi perfil"} />
+            <SectionHeader title={isAdmin ? "Seleccionar usuario" : selectedUser ? `Datos ${selectedUser.role === "patient" ? "Paciente" : selectedUser.role === "professional" ? "Profesional" : selectedUser.role === "legalGuardian" ? "Responsable Legal" : ""}` : "Editar mi perfil"} />
             {isAdmin && (
               <FormField label="Usuario" htmlFor="user">
                 <select
@@ -364,35 +278,21 @@ export default function EditProfile() {
 
             {selectedUser && (
             <section className="space-y-6">
-                {/* === Email + Cambiar contraseña === */}
-                <Card>
-                <FormField label="Email" htmlFor="email">
-                    <div className="flex flex-wrap gap-3">
-                    <input
-                        id="email"
-                        type="email"
-                        value={selectedUser.mail}
-                        readOnly
-                        className="border rounded-lg p-3 w-full sm:flex-1 bg-gray-100"
-                    />
-                    {!showChangePasswordModal && (      
-                        <PrimaryButton
-                        onClick={() => setShowChangePasswordModal(true)}
-                        size="sm"
-                        variant="solid"
-                        >
-                        Cambiar contraseña
-                        </PrimaryButton>
-                    )}
-                    </div>
-                </FormField>
-                </Card>
-
-                {/* === Formulario perfil === */}
+                {/* === Formulario de perfil unificado === */}
                 <form className="space-y-4" onSubmit={handleSubmitProfile} noValidate>
                 <Card>
                     <fieldset className="space-y-4">
-                    <legend className="text-lg font-semibold mb-4">Datos del perfil</legend>
+                    
+                    <FormField label="Tipo de usuario" htmlFor="userType">
+                        <input
+                            id="userType"
+                            type="text"
+                            value={selectedUser.role === "patient" ? "Paciente" : selectedUser.role === "professional" ? "Profesional" : selectedUser.role === "legalGuardian" ? "Responsable Legal" : selectedUser.role}
+                            readOnly
+                            className="border rounded-lg p-3 w-full bg-gray-100"
+                        />
+                    </FormField>
+
                     <div className="grid gap-4 sm:grid-cols-2">
                         <FormField label="Nombre" htmlFor="nombre">
                             <input
@@ -416,6 +316,16 @@ export default function EditProfile() {
                         </FormField>
                     </div>
 
+                    <FormField label="Email" htmlFor="email">
+                        <input
+                            id="email"
+                            type="email"
+                            value={selectedUser.mail}
+                            readOnly
+                            className="border rounded-lg p-3 w-full bg-gray-100"
+                        />
+                    </FormField>
+
                     <FormField label="Teléfono" htmlFor="telefono">
                         <input
                         id="telefono"
@@ -429,6 +339,16 @@ export default function EditProfile() {
 
                     {(selectedUser.legalGuardian || selectedUser.patient) && (
                         <>
+                        <FormField label="Fecha de nacimiento" htmlFor="add-fecha">
+                            <input
+                            id="add-fecha"
+                            type="date"
+                            value={birthdate ?? ""}
+                            readOnly
+                            className="border rounded-lg p-3 w-full bg-gray-100"
+                            />
+                        </FormField>
+
                         <FormField label="Obra Social" htmlFor="healthInsurance">
                             <select
                             id="healthInsurance"
@@ -444,32 +364,36 @@ export default function EditProfile() {
                             ))}
                             </select>
                         </FormField>
-
-                        <FormField label="Fecha de nacimiento" htmlFor="add-fecha">
-                            <input
-                            id="add-fecha"
-                            type="date"
-                            value={birthdate ?? ""}
-                            onChange={(e) => setBirthdate(e.target.value)}
-                            className="border rounded-lg p-3 w-full"
-                            />
-                        </FormField>
                         </>
                     )}
 
                     {selectedUser.professional && (
                         <FormField label="Especialidad" htmlFor="occupation">
-                        <select id="occupation" disabled value={occupationName} className="border rounded-lg p-3 w-full">
+                        <select id="occupation" disabled value={occupationName} className="border rounded-lg p-3 w-full bg-gray-100">
                             <option>{occupationName || "Sin especialidad"}</option>
                         </select>
                         </FormField>
                     )}
 
+                    <FormField label="Contraseña" htmlFor="password">
+                        <InputPassword
+                            id="password"
+                            name="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
+                            showPwd={showPassword}
+                            toggleShowPwd={() => setShowPassword(!showPassword)}
+                        />
+                    </FormField>
+
                     <div className="flex justify-center">
                         
                     
                     <ActionGrid>
-                        <PrimaryButton type="submit">Guardar perfil</PrimaryButton>
+                        <PrimaryButton type="submit">
+                            {selectedUser.role === "professional" ? "Guardar Cambios" : "Modificar Perfil"}
+                        </PrimaryButton>
+                        <PrimaryButton type="button" onClick={handleCancel} variant="danger">Cancelar Cambios</PrimaryButton>
                     </ActionGrid>
 
                     </div>
@@ -478,107 +402,49 @@ export default function EditProfile() {
                 </Card>
                 </form>
 
-                {/* === Footer acciones === */}
-                <div className="flex justify-end gap-3 mt-6">
-                  <PrimaryButton onClick={handleCancel} size="sm">
-                    Cancelar
-                  </PrimaryButton>
-                  <PrimaryButton onClick={openConfirmDelete} size="sm" variant="danger">
-                    Borrar perfil
-                  </PrimaryButton>
-                </div>
-
             </section>
             )}
 
-            {/* eliminar perfil */}
-                {showConfirmDelete && (
-                <Modal title="Borrar perfil" onClose={closeConfirmDelete}>
-                  <p className="text-gray-700 mb-6">
-                    ¿Estás segura/o que querés borrar este perfil?
-                    <br />
-                    Esta acción no se puede deshacer.
-                  </p>
-
-                  <div className="flex justify-end gap-3">
-                    <PrimaryButton onClick={closeConfirmDelete} size="sm" variant="outline">
-                      Cancelar
-                    </PrimaryButton>
-                    <PrimaryButton onClick={handleConfirmDelete} size="sm" variant="danger">
-                      Confirmar borrado
-                    </PrimaryButton>
-                  </div>
-                </Modal>
-              )}
-
             {/* === Modal cambiar contraseña === */}
             
-            {showChangePasswordModal && (
-            <div
-                className="fixed inset-0 bg-black/40 flex items-center justify-center p-4 z-50"
-                role="presentation"
-                onClick={() => setShowChangePasswordModal(false)}
-            >
-                <div
-                    className="bg-white rounded-xl shadow-lg p-6 max-w-md w-full"
-                    role="dialog"
-                    aria-modal="true"
-                    aria-labelledby="change-pass-title"
-                    onClick={(e) => e.stopPropagation()}
-                >
-                <h2 id="change-pass-title" className="text-lg font-semibold mb-4">
-                    Cambiar contraseña
-                </h2>
-
-                {/* Campos de contraseña */}
+            {showConfirmModal && selectedUser && (
+            <Modal title="¿Está seguro que desea modificar los datos de su perfil?" onClose={() => setShowConfirmModal(false)}>
                 <div className="space-y-4">
-                    <InputPassword
-                        label="Contraseña Actual"
-                        id="currentPassword"
-                        name="currentPassword"
-                        value={currentPassword}
-                        onChange={(e) => setCurrentPassword(e.target.value)}
-                        showPwd={showCurrentPassword}
-                        toggleShowPwd={() => setShowCurrentPassword(!showCurrentPassword)}
-                    />
-                    <InputPassword
-                        label="Nueva contraseña"
-                        id="newPassword"
-                        name="newPassword"
-                        value={newPassword}
-                        onChange={(e) => setNewPassword(e.target.value)}
-                        showPwd={showNewPassword}
-                        toggleShowPwd={() => setShowNewPassword(!showNewPassword)}
-                    />
-                    <InputPassword
-                        label="Repetir nueva contraseña"
-                        id="confirmPassword"
-                        name="confirmPassword"
-                        value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
-                        showPwd={showNewConfirmPassword}
-                        toggleShowPwd={() => setShowNewConfirmPassword(!showNewConfirmPassword)}
-                    />
-                </div>
+                    <p className="text-sm text-gray-700 italic">
+                        Modificar los datos hará que los datos anteriores sean reemplazados por los nuevos
+                    </p>
 
-                {/* Botones del modal */}
-                    <div className="flex justify-end gap-3 mt-6">
-                        <PrimaryButton
-                            onClick={() => handleSubmitAuth(currentPassword, newPassword, confirmPassword)}
-                            size="sm"
-                            variant="solid"
-                        >
-                        Guardar
-                        </PrimaryButton>
-
-                        <PrimaryButton onClick={closeSubmitAuth} size="sm" variant="outline">
-                            Cancelar
-                        </PrimaryButton>
+                    <div className="bg-gray-50 p-4 rounded-lg space-y-2">
+                        <p className="text-sm"><strong>Tipo de usuario:</strong> {selectedUser.role === "patient" ? "Paciente" : selectedUser.role === "professional" ? "Profesional" : selectedUser.role === "legalGuardian" ? "Responsable Legal" : selectedUser.role}</p>
+                        <p className="text-sm"><strong>Nombre:</strong> {firstName}</p>
+                        <p className="text-sm"><strong>Apellido:</strong> {lastName}</p>
+                        <p className="text-sm"><strong>Email:</strong> {selectedUser.mail}</p>
+                        <p className="text-sm"><strong>Teléfono:</strong> {telephone}</p>
+                        
+                        {(selectedUser.legalGuardian || selectedUser.patient) && (
+                            <>
+                            <p className="text-sm"><strong>Fecha de nacimiento:</strong> {birthdate}</p>
+                            <p className="text-sm"><strong>Obra Social:</strong> {healthInsurances.find(h => h.id === selectedHealthInsuranceId)?.name || "No seleccionada"}</p>
+                            </>
+                        )}
+                        
+                        {selectedUser.professional && (
+                            <p className="text-sm"><strong>Especialidad:</strong> {occupationName}</p>
+                        )}
+                        
+                        <p className="text-sm"><strong>Contraseña:</strong> {password ? "***************" : "Sin cambios"}</p>
                     </div>
 
-
+                    <ActionGrid>
+                        <PrimaryButton onClick={handleConfirmModification}>
+                            Confirmar modificación
+                        </PrimaryButton>
+                        <PrimaryButton onClick={() => setShowConfirmModal(false)} variant="outline">
+                            Cancelar
+                        </PrimaryButton>
+                    </ActionGrid>
                 </div>
-            </div>
+            </Modal>
             )}
 
         </main>

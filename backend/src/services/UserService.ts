@@ -72,6 +72,25 @@ export class UserService {
         return userDto;
     }
 
+    static async updatePasswordDirect(
+        idUser: number,
+        newPassword: string
+    ) {
+        const em = (await getORM()).em.fork();
+        const user = await em.findOne(User, { id: idUser });
+
+        if (!user || !user.isActive) {
+            throw new NotFoundError('Usuario');
+        }
+        
+        user.password = await bcrypt.hash(newPassword, SALT_ROUNDS);
+        await em.flush();
+
+        const userDto = toUserResponseDTO(user);
+
+        return userDto;
+    }
+
     static async getAll(includeInactive: boolean) {
         const em = (await getORM()).em.fork();
         const whereCondition = includeInactive ? {} : { isActive: true };

@@ -112,3 +112,21 @@ export class LeaveScheduleConflictError extends BaseHttpError {
     super(409, 'LEAVE_SCHEDULE_CONFLICT', `Ya existe una licencia activa que conflictua con la fecha inicio - fin de la nueva licencia: '${startDate} - ${endDate}'`);
   }
 }
+
+export class DuplicateHealthInsuranceError extends BaseHttpError {
+  conflictingEntity: { id: number; name: string };
+
+  constructor(conflictingEntity: { id: number; name: string }) {
+    super(409, 'DUPLICATE_HEALTH_INSURANCE', 'El nombre de la obra social ingresada coincide con el nombre de otra obra social');
+    this.conflictingEntity = conflictingEntity;
+  }
+
+  toJSON() {
+    return {
+      error: this.name,
+      code: this.code,
+      message: this.message,
+      conflictingEntity: this.conflictingEntity,
+    };
+  }
+}

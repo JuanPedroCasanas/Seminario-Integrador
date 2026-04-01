@@ -53,6 +53,29 @@ export class UserController {
         }
     }
 
+    static async updatePasswordDirect(req: Request, res: Response) {
+        try {
+            const { idUser, newPassword } = req.body;
+
+            const result = await UserService.updatePasswordDirect(
+                Number(idUser),
+                newPassword
+            );
+
+            return res.status(200).json({
+                message: 'Contraseña cambiada exitosamente para: ',
+                user: result,
+            });
+
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            return res.status(500).json({ message: 'Error al actualizar el usuario' });
+        }
+    }
+
     static async getAll(req: Request, res: Response) {
         const includeInactive =
             req.query.includeInactive === undefined

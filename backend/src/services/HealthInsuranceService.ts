@@ -1,12 +1,26 @@
 import { getORM } from '../orm/db';
 import { HealthInsurance } from '../model/entities/HealthInsurance';
-import { BaseHttpError, NotFoundError } from '../utils/errors/BaseHttpError';
+import { BaseHttpError, NotFoundError, EntityAlreadyExistsError, DuplicateHealthInsuranceError } from '../utils/errors/BaseHttpError';
 import { Professional } from '../model/entities/Professional';
 
 export class HealthInsuranceService {
 
     static async addHealthInsurance(name: string) {
         const em = await getORM().em.fork(); 
+        
+        // Validar que no exista una obra social activa con el mismo nombre
+        const existingHealthInsurance = await em.findOne(HealthInsurance, { 
+            name: name.trim(), 
+            isActive: true 
+        });
+
+        if (existingHealthInsurance) {
+            throw new DuplicateHealthInsuranceError({
+                id: existingHealthInsurance.id,
+                name: existingHealthInsurance.name
+            });
+        }
+
         const healthInsurance = new HealthInsurance(name);
         await em.persistAndFlush(healthInsurance);
 
@@ -20,6 +34,19 @@ export class HealthInsuranceService {
 
         if (!healthInsurance) {
             throw new NotFoundError('Obra Social');
+        }
+
+        // Validar que no exista otra obra social activa con el mismo nombre
+        const existingHealthInsurance = await em.findOne(HealthInsurance, { 
+            name: name.trim(), 
+            isActive: true 
+        });
+
+        if (existingHealthInsurance && existingHealthInsurance.id !== idHealthInsurance) {
+            throw new DuplicateHealthInsuranceError({
+                id: existingHealthInsurance.id,
+                name: existingHealthInsurance.name
+            });
         }
 
         healthInsurance.name = name;

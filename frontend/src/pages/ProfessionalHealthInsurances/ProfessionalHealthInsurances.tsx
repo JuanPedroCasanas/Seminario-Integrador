@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-import { Toast, EmptyState, Table, PrimaryButton, Card, FilterBar, FormField, Modal, DialogActions, SummaryList } from "@/components/ui";
+import { Toast, EmptyState, Table, PrimaryButton, Card, FilterBar, FormField, Modal, DialogActions } from "@/components/ui";
 import { Page, SectionHeader } from "@/components/Layout";
 
 import {
@@ -28,18 +28,7 @@ export default function ProfessionalHealthInsurances(){
   const [professionals, setProfessionals] = useState<Professional[]>([]);
   const [selectedProfessional, setSelectedProfessional]=useState <Professional | null>(null);
 
-  // ---------- Agregar (2 pasos + dirty-check) ----------
-  const [showAdd, setShowAdd] = useState(false);
-  const [addStep, setAddStep] = useState<"form" | "confirm">("form");
-
-
-  const [addForm, setAddForm] = useState<Partial<HealthInsurance>>({
-    name: ""
-  });
-
   const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
-
-  const [addSnapshot, setAddSnapshot] = useState<Partial<HealthInsurance> | null>(null);
   
   
   useEffect(() => {
@@ -115,30 +104,6 @@ export default function ProfessionalHealthInsurances(){
   }, [healthInsurances]);
 
 
-// carga de OS
-  const openAdd = () => {
-    const initial = { name:''};
-    setAddForm(initial);
-    setAddSnapshot(initial);
-    setAddStep("form");
-    setShowAdd(true);
-  };
-
-  const closeAdd = () => setShowAdd(false);
-
-  const tryCloseAdd = () => {
-    const dirty = !sameJSON(addForm, addSnapshot);
-    if (dirty) {
-      setDiscardCtx({ open: true, context: "add" });
-    } else {
-      closeAdd();
-    }
-  };
-
-  const handleAddContinue = () => {
-    setAddStep("confirm");
-  };
-
   const handleAddConfirm = async () => {
 
     if(!selectedHealthInsuranceId || !selectedProfessional) {
@@ -166,7 +131,6 @@ export default function ProfessionalHealthInsurances(){
             setSelectedProfessionalHealthInsurances(updated?.healthInsurances ?? []);
 
     }
-    closeAdd()
     const toastData = await HandleProfessionalControllerResponse(res);
     setToast(toastData);
   };
@@ -204,32 +168,47 @@ export default function ProfessionalHealthInsurances(){
       setToast(toastData);
   };
   
- // DESCARTAR cambios
-    const [discardCtx, setDiscardCtx] = useState<{ open: boolean; context?: "add" | "edit" }>({
-      open: false,
-    });
-    const closeDiscard = () => setDiscardCtx({ open: false });
-    const confirmDiscard = () => {
-      if (discardCtx.context === "add") closeAdd();
-      setDiscardCtx({ open: false });
-    };
-
   // uso del esc
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== "Escape") return;
-      if (discardCtx.open) return closeDiscard();
-      if (showAdd) return tryCloseAdd();
       if (deleteTarget) return closeDelete();
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [showAdd, deleteTarget, discardCtx.open, addForm,addSnapshot]);
+  }, [deleteTarget]);
 
 
  return (
     <Page>
       <SectionHeader title="Obras sociales admitidas" />
+
+      {/* Select y botón para agregar obra social */}
+      {selectedProfessional && healthInsurances.length > 0 && (
+        <Card className="mb-6">
+          <div className="flex gap-3 items-end">
+            <FormField label=" " htmlFor="healthInsurances" className="flex-1">
+              <select
+                id="healthInsurances"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-500"
+                value={selectedHealthInsuranceId ?? healthInsurances?.[0]?.id ?? ""}
+                onChange={(e) => setSelectedHealthInsuranceId(Number(e.target.value))}
+                aria-label="healthInsurances"
+                title="healthInsurances"
+              >
+                {healthInsurances.map((hI) => (
+                  <option key={hI.id} value={hI.id}>
+                    {hI.name}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+            <PrimaryButton onClick={handleAddConfirm} size="md">
+              Agregar Obra social
+            </PrimaryButton>
+          </div>
+        </Card>
+      )}
 
       {/* Selector de profesional para admin. Y para profesional: simplemente NADA!! :D */}
       {isAdmin && (
@@ -273,7 +252,6 @@ export default function ProfessionalHealthInsurances(){
               />
             </svg>
           }
-          action={<PrimaryButton onClick={openAdd}>Agregar obra social</PrimaryButton>}
         />
       )}
 
@@ -281,7 +259,7 @@ export default function ProfessionalHealthInsurances(){
       {!!selectedProfessionalHealthInsurances?.length && (
         <>
           <Card>
-            <Table headers={["Id Obra Social", "Nombre Obra Social", " "]}>
+            <Table headers={["Id", "Nombre", " "]}>
               {selectedProfessionalHealthInsurances.map((pHI) => (
                 <tr key={pHI.id} className="even:bg-gray-50 hover:bg-gray-100 transition">
                   <td className="px-4 py-3">{pHI.id}</td>
@@ -295,114 +273,24 @@ export default function ProfessionalHealthInsurances(){
               ))}
             </Table>
           </Card>
-
-          {/* Footer: Agregar */}
-          <div className="mt-4 flex justify-right">
-            <PrimaryButton onClick={openAdd}>Agregar obra social</PrimaryButton>
-          </div>
         </>
-      )}
-
-      {/* para cuando no hay OS disponibles*/}
-      {showAdd && healthInsurances.length === 0 && (
-        <Modal title="No hay obras sociales disponibles" onClose={tryCloseAdd}>
-          <p className="text-[#213547] mb-2">
-            Ya se agregaron todas las obras sociales existentes para este profesional.
-          </p>
-          <DialogActions>
-            <PrimaryButton variant="outline" onClick={tryCloseAdd}>
-              Cerrar
-            </PrimaryButton>
-          </DialogActions>
-        </Modal>
-      )}
-
-      {/* agregar (si todavia quedan OS) */}
-      {showAdd && healthInsurances.length > 0 && (
-        <Modal
-          title={addStep === "form" ? "Agregar obra social" : "Confirmar nueva obra social"}
-          onClose={tryCloseAdd}
-        >
-          {addStep === "form" ? (
-            <>
-              <FormField label="Obras Sociales" htmlFor="healthInsurances">
-                <select
-                  id="healthInsurances"
-                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-cyan-500"
-                  value={selectedHealthInsuranceId ?? healthInsurances?.[0]?.id ?? ""}
-                  onChange={(e) => setSelectedHealthInsuranceId(Number(e.target.value))}
-                  disabled={!healthInsurances?.length}
-                  aria-label="healthInsurances"
-                  title="healthInsurances"
-                >
-                  {healthInsurances.map((hI) => (
-                    <option key={hI.id} value={hI.id}>
-                      {`Id ${hI.id} - ${hI.name}`}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-
-              <DialogActions>
-                <PrimaryButton variant="outline" onClick={tryCloseAdd}>
-                  Cancelar
-                </PrimaryButton>
-                <PrimaryButton onClick={handleAddContinue}>Continuar</PrimaryButton>
-              </DialogActions>
-            </>
-          ) : (
-            <>
-              <p className="text-[#213547] mb-2">Revisá que los datos sean correctos.</p>
-
-              <SummaryList
-                items={[
-                  { label: "Id", value: String(selectedHealthInsuranceId ?? "") },
-                  {
-                    label: "Nombre",
-                    value: healthInsurances.find((hI) => hI.id === selectedHealthInsuranceId)?.name ?? "",
-                  },
-                ]}
-              />
-
-              <DialogActions>
-                <PrimaryButton variant="outline" onClick={() => setAddStep("form")}>
-                  Volver
-                </PrimaryButton>
-                <PrimaryButton onClick={handleAddConfirm}>Confirmar</PrimaryButton>
-              </DialogActions>
-            </>
-          )}
-        </Modal>
       )}
 
       {/* Eliminar */}
       {deleteTarget && (
-        <Modal title="Eliminar obra social" onClose={closeDelete}>
-          <p className="text-[#213547] mb-2">
-            ¿Estás seguro de eliminar a <strong>{deleteTarget.name}</strong>?
-          </p>
+        <Modal title="¿Está seguro que desea dejar de atender la obra social?" onClose={closeDelete}>
+          <div className="text-[#213547] mb-4">
+            <p className="mb-1"><strong>ID:</strong> {deleteTarget.id}</p>
+            <p><strong>Nombre:</strong> {deleteTarget.name}</p>
+          </div>
           <DialogActions>
-            <PrimaryButton variant="outline" onClick={closeDelete}>
-              Cancelar
-            </PrimaryButton>
             <PrimaryButton variant="danger" onClick={handleDeleteConfirm}>
-              Eliminar
+            DAR DE BAJA OBRA SOCIAL
             </PrimaryButton>
-          </DialogActions>
-        </Modal>
-      )}
+            <PrimaryButton variant="outline" onClick={closeDelete}>
+              CANCELAR
+            </PrimaryButton>
 
-      {/* Descartar cambios */}
-      {discardCtx.open && (
-        <Modal title="Descartar cambios" onClose={closeDiscard}>
-          <p className="text-[#213547] mb-2">Tenés cambios sin guardar. ¿Cerrar de todos modos?</p>
-          <DialogActions>
-            <PrimaryButton variant="outline" onClick={closeDiscard}>
-              Seguir editando
-            </PrimaryButton>
-            <PrimaryButton variant="danger" onClick={confirmDiscard}>
-              Descartar
-            </PrimaryButton>
           </DialogActions>
         </Modal>
       )}

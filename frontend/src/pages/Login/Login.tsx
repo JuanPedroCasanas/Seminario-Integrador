@@ -1,8 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { NavLink } from "react-router-dom";
 
-import { Toast, FormField,  InputPassword } from "@/components/ui";
+import { Toast, FormField,  InputPassword, PrimaryButton } from "@/components/ui";
 import { Page, SectionHeader } from "@/components/Layout";
 import { setAccessToken } from "@/common/utils/auth/TokenStorage";
 import { HandleErrorResponse } from "@/common/utils";
@@ -99,20 +98,11 @@ return (
     >
       {/* Encabezado */}
       <div className="text-center">
-         <SectionHeader title="Bienvenido a Narrativas" />
-      </div>
-
-      <div className="text-center">
-        <NavLink
-          to="/register"
-          className="text-[20px] font-medium text-cyan-600 underline whitespace-nowrap"
-        >
-          ¿Primera vez? Registrarse
-        </NavLink>
+         <SectionHeader title="Bienvenido" />
       </div>
 
       {/* Email */}
-      <FormField label="Correo electrónico" htmlFor="mail">
+      <FormField label="Ingrese el email del usuario" htmlFor="mail">
         <div className="flex items-center gap-2 w-full border border-[#b5b6b7] rounded-[10px] bg-white px-4 py-[14px]">
           <input
             id="mail"
@@ -129,7 +119,7 @@ return (
       </FormField>
 
       {/* Password */}
-      <FormField label="Contraseña" htmlFor="password">
+      <FormField label="Ingrese la contraseña" htmlFor="password">
         <InputPassword
           id="password"
           name="password"
@@ -142,14 +132,27 @@ return (
 
       {/* CTA + fila inferior */}
       <div className="grid gap-4">
-        <button
-          type="submit"
-          className="w-full rounded-[10px] px-3 py-[13px] bg-cyan-600 text-white text-[16px] font-bold leading-[22px] hover:brightness-95 active:translate-y-[1px] transition-[filter,transform] duration-150 ease-in-out"
-        >
-          Iniciar sesión
-        </button>
-
+        <div className="flex gap-3">
+          <PrimaryButton 
+            type="submit"
+            fullWidth
+            size="md"
+          >
+            Iniciar sesión
+          </PrimaryButton>
+          
+          <PrimaryButton 
+            type="button"
+            variant="outline"
+            fullWidth
+            size="md"
+            onClick={() => navigate("/register")}
+          >
+            Registrarse
+          </PrimaryButton>
+        </div>
       </div>
+
     </form>
     
   {toast && (

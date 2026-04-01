@@ -14,16 +14,18 @@ export default function ProfessionalPortal() {
       />
 
       <ActionGrid>
-        <NavButton to="/professional-health-insurances">Obras Sociales admitidas</NavButton>
-
-        <NavButton to="/module-rent">Alquilar módulo</NavButton>
-
-        <NavButton to="/professional-leave">Solicitar licencia</NavButton>
-
-        <NavButton to="/edit-profile">Editar perfil</NavButton>
-
-        <NavButton to="/appointment-list">Listado de turnos</NavButton>
+        <NavButton to="/module-list">Ver mis módulos</NavButton>
+        <NavButton to="/module-rent">Alquilar nuevo(s) módulo(s)</NavButton>
+        <NavButton to="/professional-leave">Ver mis licencias</NavButton>
+        <NavButton to="/professional-health-insurances">Obras Sociales</NavButton>
       </ActionGrid>
+
+      <div className="mt-6 max-w-md mx-auto">
+        <NavButton to="/module-renew" fullWidth>Renovar mis alquileres</NavButton>
+        <p className="text-xs text-red-600 text-center mt-2 italic">
+          * Esta opción está disponible los últimos 5 días hábiles de cada mes
+        </p>
+      </div>
 
   <div className="mt-6">
     <ProfessionalLeavesCard />
