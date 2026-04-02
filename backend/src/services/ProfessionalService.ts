@@ -131,12 +131,26 @@ export class ProfessionalService {
         return professional;
     }
 
+    static isOnLeave(professional: Professional): boolean {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        
+        return professional.leaves?.getItems().some(leave => {
+            if (!leave.isActive) return false;
+            const start = new Date(leave.startDate);
+            const end = new Date(leave.endDate);
+            start.setHours(0, 0, 0, 0);
+            end.setHours(0, 0, 0, 0);
+            return start <= today && end >= today;
+        }) || false;
+    }
+
     static async getProfessionals(includeInactive: boolean) {
         const em = await getORM().em.fork();
         const whereCondition = includeInactive ? {} : { isActive: true };
 
         return em.find(Professional, whereCondition, {
-            populate: ['occupation'],
+            populate: ['occupation', 'user', 'leaves'],
         });
     }
 

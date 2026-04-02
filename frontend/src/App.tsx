@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Layout/Navbar/Navbar";
 import { UserRole } from "./common/types";
 
-import { Home, Login, Register, ModuleRent, AppointmentSchedule, AppointmentSeriesSchedule, ProfessionalLeave, EditProfile, ProfessionalPortal, LegalGuardianPortal, PatientPortal, GuardedPatients, ModuleList, AppointmentList, DebugConsole, ConsultingRooms, HealthInsurances, Occupations,
+import { Home, Login, Register, ModuleRent, AppointmentSchedule, AppointmentSeriesSchedule, ProfessionalLeave, ProfessionalLeaves, EditProfile, ProfessionalPortal, LegalGuardianPortal, PatientPortal, GuardedPatients, ModuleList, AppointmentList, DebugConsole, ConsultingRooms, HealthInsurances, Occupations,
 Professionals, ProfessionalHealthInsurances
 } from "./pages";
 
@@ -57,6 +57,9 @@ export default function App() {
 
           <Route path="/professional-leave" element=
             {<ProfessionalLeave />} />
+
+          <Route path="/professional-leaves" element=
+            {<ProfessionalLeaves />} />
 
         </Route>
           

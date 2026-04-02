@@ -32,3 +32,6 @@ export * from './Module/Module.types';
 
 // turnos
 export * from './Appointment/Appointment.types';
+
+// licencias
+export * from './Leave/Leave.types';

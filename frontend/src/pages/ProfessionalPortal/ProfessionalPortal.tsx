@@ -1,4 +1,4 @@
-import { ActionGrid, NavButton, Toast, ProfessionalLeavesCard} from "@/components/ui";
+import { ActionGrid, NavButton, Toast } from "@/components/ui";
 import { Page, SectionHeader } from "@/components/Layout";
 import { useLocation } from "react-router-dom";
 
@@ -16,7 +16,7 @@ export default function ProfessionalPortal() {
       <ActionGrid>
         <NavButton to="/module-list">Ver mis módulos</NavButton>
         <NavButton to="/module-rent">Alquilar nuevo(s) módulo(s)</NavButton>
-        <NavButton to="/professional-leave">Ver mis licencias</NavButton>
+        <NavButton to="/professional-leaves">Ver mis licencias</NavButton>
         <NavButton to="/professional-health-insurances">Obras Sociales</NavButton>
       </ActionGrid>
 
@@ -27,17 +27,13 @@ export default function ProfessionalPortal() {
         </p>
       </div>
 
-  <div className="mt-6">
-    <ProfessionalLeavesCard />
-  </div>
-
-  {toastMessage && (
-    <Toast
-      message={toastMessage.message}
-      type={toastMessage.type}
-      onClose={() => {}}
-    />
-  )}
+      {toastMessage && (
+        <Toast
+          message={toastMessage.message}
+          type={toastMessage.type}
+          onClose={() => {}}
+        />
+      )}
 
     </Page>
   );

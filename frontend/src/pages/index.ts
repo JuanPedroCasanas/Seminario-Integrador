@@ -49,5 +49,8 @@ export { default as ProfessionalPortal } from "./ProfessionalPortal/Professional
 // Professional Leave
 export { default as ProfessionalLeave } from "./ProfessionalLeave/ProfessionalLeave";
 
+// Professional Leaves
+export { default as ProfessionalLeaves } from "./ProfessionalLeaves/ProfessionalLeaves";
+
 // Register
 export { default as Register } from "./Register/Register";

@@ -14,6 +14,7 @@ export { Card } from "./DataDisplay/Card/Card";
 export { default as SummaryList } from "./DataDisplay/SummaryList/SummaryList";
 export { default as Table } from "./DataDisplay/Table/Table";
 export { FilterBar } from "./DataDisplay/FilterBar/FilterBar";
+export { default as PrintableReport } from "./DataDisplay/PrintableReport/PrintableReport";
 // PatientAppointmentCard
 export { default as PatientAppointmentsCard } from "./DataDisplay/PatientAppointmentsCard/PatientAppointmentsCard";
 export { default as LegalGuardianAppointmentsCard } from "./DataDisplay/LegalGuardianAppointmentsCard/LegalGuardianAppointmentsCard";

@@ -577,5 +577,40 @@ router.get(
   AppointmentController.getCurrentAppointmentSequencesByLegalGuardian
 );
 
+/**
+ * @swagger
+ * /appointment/getScheduledByProfessionalAndDate/{idProfessional}:
+ *   get:
+ *     summary: Obtener turnos agendados de un profesional para una fecha específica
+ *     tags: [Turnos]
+ *     parameters:
+ *       - in: path
+ *         name: idProfessional
+ *         required: true
+ *         description: ID del profesional
+ *         schema:
+ *           type: integer
+ *       - in: query
+ *         name: date
+ *         required: true
+ *         description: Fecha en formato YYYY-MM-DD
+ *         schema:
+ *           type: string
+ *           format: date
+ *     responses:
+ *       200:
+ *         description: Lista de turnos agendados
+ *       400:
+ *         description: Fecha requerida
+ *       404:
+ *         description: Profesional no encontrado
+ */
+router.get(
+  '/getScheduledByProfessionalAndDate/:idProfessional',
+  validate(getByProfessionalAppointmentSchema),
+  authJwt,
+  AppointmentController.getScheduledAppointmentsByProfessionalAndDate
+);
+
 
 export default router;

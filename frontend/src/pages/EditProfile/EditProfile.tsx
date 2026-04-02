@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom"; // si no usás Router, ver nota más abajo
+import { useNavigate, useLocation } from "react-router-dom"; // si no usás Router, ver nota más abajo
 
 import { Toast, ActionGrid, PrimaryButton, FormField, Card, InputPassword, Modal } from "@/components/ui";
 import { Page, SectionHeader } from "@/components/Layout";
@@ -24,6 +24,7 @@ export default function EditProfile() {
   const { user } = useAuth();
   const isAdmin = user?.role === UserRole.Admin;
   const logout = useLogout();
+  const location = useLocation();
 
   // ----- Usuario seleccionado -----
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -86,6 +87,17 @@ export default function EditProfile() {
         }
     })();
   }, []);
+
+  // Pre-seleccionar usuario si viene desde otra página (ej: desde Professionals)
+  useEffect(() => {
+    const state = location.state as { selectedUserId?: number } | null;
+    if (state?.selectedUserId && users.length > 0) {
+      const userToSelect = users.find(u => u.id === state.selectedUserId);
+      if (userToSelect) {
+        setSelectedUser(userToSelect);
+      }
+    }
+  }, [users, location.state]);
 
 
   //Autocompletar campos a partir del selected user

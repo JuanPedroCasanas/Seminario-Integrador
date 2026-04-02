@@ -1,4 +1,4 @@
-import { HealthInsurance, Occupation } from "@/common/types";
+import { HealthInsurance, Occupation, User } from "@/common/types";
 
 export type Professional = {
   id?: number;
@@ -8,4 +8,6 @@ export type Professional = {
   telephone?: string;
   isActive?: boolean;
   healthInsurances?: HealthInsurance[];
+  user?: User;
+  isOnLeave?: boolean;
 };

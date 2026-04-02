@@ -285,4 +285,26 @@ export class AppointmentController {
             }
         }
     }
+
+    static async getScheduledAppointmentsByProfessionalAndDate(req: Request, res: Response) {
+        const idProfessional = Number(req.params.idProfessional);
+        const date = req.query.date as string;
+
+        if (!date) {
+            return res.status(400).json({ message: 'Fecha requerida' });
+        }
+
+        try {
+            const appointments = await AppointmentService.getScheduledAppointmentsByProfessionalAndDate(idProfessional, date);
+            return res.status(200).json(appointments);
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al buscar turnos por profesional y fecha' });
+            }
+        }
+    }
 }

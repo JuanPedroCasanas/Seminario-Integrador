@@ -446,4 +446,37 @@ export class AppointmentService {
 
         return series;
     }
+
+    static async getScheduledAppointmentsByProfessionalAndDate(idProfessional: number, date: string) {
+        const em = await getORM().em.fork();
+
+        const professional = await em.findOne(Professional, { id: idProfessional });
+        if (!professional || !professional.isActive) {
+            throw new NotFoundError('Profesional');
+        }
+
+        // Parsear la fecha en hora local (evitar problemas de zona horaria)
+        const [year, month, day] = date.split('-').map(Number);
+        const targetDate = new Date(year, month - 1, day, 0, 0, 0, 0);
+        const nextDay = new Date(year, month - 1, day + 1, 0, 0, 0, 0);
+
+        // Buscar turnos agendados del profesional en esa fecha
+        const appointments = await em.find(
+            Appointment,
+            {
+                professional: professional,
+                status: AppointmentStatus.Scheduled,
+                startTime: {
+                    $gte: targetDate,
+                    $lt: nextDay
+                }
+            },
+            { 
+                populate: ['patient', 'patient.user', 'healthInsurance', 'module.consultingRoom', 'series'],
+                orderBy: { startTime: 'ASC' }
+            }
+        );
+
+        return appointments.map(toDetailedAppointmentDTO);
+    }
 }

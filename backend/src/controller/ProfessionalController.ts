@@ -122,7 +122,14 @@ export class ProfessionalController {
 
         try {
             const professionals = await ProfessionalService.getProfessionals(includeInactive);
-            return res.status(200).json(safeSerialize(professionals));
+            
+            // Serializar y agregar isOnLeave a cada profesional
+            const professionalsWithLeaveStatus = professionals.map(prof => ({
+                ...safeSerialize(prof),
+                isOnLeave: ProfessionalService.isOnLeave(prof)
+            }));
+            
+            return res.status(200).json(professionalsWithLeaveStatus);
         } catch (error) {
             console.error(error);
             return res.status(500).json({ message: 'Error al buscar los profesionales' });

@@ -1,3 +1,5 @@
+import { User } from "@/common/types";
+
 export type Patient = {
   id?: number;
   firstName?: string;
@@ -7,4 +9,5 @@ export type Patient = {
   /**yyyy/mm/dd */
   birthdate?: string;
   isActive?: boolean;
+  user?: User;
 };
