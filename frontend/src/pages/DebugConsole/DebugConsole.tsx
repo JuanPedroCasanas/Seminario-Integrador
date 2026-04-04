@@ -27,7 +27,7 @@ export default function DebugConsolePage() {
       />
       <ActionGrid>
         <NavButton to="/appointment-schedule">Reservar turno para un paciente</NavButton>
-        <NavButton to="/appointment-series-schedule">Reservar turno sostenido para un paciente</NavButton>
+
         <NavButton to="/professional-leave">Solicitar licencia para un profesional</NavButton>
         <NavButton to="/module-rent">Alquilar un módulo para un profesional</NavButton>
         <NavButton to="/professional-health-insurances">Obras sociales admitidas por un profesional</NavButton>

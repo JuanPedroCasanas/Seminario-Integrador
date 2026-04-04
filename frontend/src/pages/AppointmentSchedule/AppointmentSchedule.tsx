@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Toast } from '@/components/ui/Feedback/Toast';
 
 import {
@@ -16,13 +17,15 @@ import { HandleAppointmentControllerResponse,
   HandleProfessionalControllerResponse } from '@/common/utils';
 
 import { AppointmentScheduleForm } from './AppointmentScheduleForm';
-import { Appointment, Occupation, Patient, Professional, UserRole } from '@/common/types';
+import { Appointment, Occupation, Patient, PopulatedAppointment, Professional, UserRole } from '@/common/types';
 import { authFetch } from '@/common/utils/auth/AuthFetch';
 import { API_BASE } from '@/lib/api';
 import { useAuth } from '@/common/utils/auth/AuthContext';
+import { AppointmentReceiptModal } from '@/components/ui';
 
 export default function AppointmentSchedule() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const isAdmin = user?.role === UserRole.Admin;
   const isPatient = user?.role === UserRole.Patient;
   const isLegalGuardian = user?.role === UserRole.LegalGuardian;
@@ -39,6 +42,9 @@ export default function AppointmentSchedule() {
   // para que funcione la fecha de hoy
   const todayRef = useRef(new Date());
   const today = todayRef.current;
+
+  // Tipo de turno
+  const [appointmentType, setAppointmentType] = useState<'único' | 'sostenido' | null>(null);
 
   // Catálogos
   const [occupations, setOccupations] = useState<Occupation[]>([]);
@@ -58,14 +64,19 @@ export default function AppointmentSchedule() {
   const [selectedDateISO, setSelectedDateISO] = useState<string>('');
   const [selectedSlot, setSelectedSlot] = useState<string>('');
 
+  // Para turno sostenido
+  const [selectedDay, setSelectedDay] = useState<number | null>(null); // DayOfWeek enum value
+  const [selectedHour, setSelectedHour] = useState<number | null>(null); // Hour (0-23)
+
   // Turnos
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [loadingMonth, setLoadingMonth] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Modal
-  const [confirmOpen, setConfirmOpen] = useState(false);
+  // Modal de confirmación / constancia
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [bookedAppointment, setBookedAppointment] = useState<PopulatedAppointment | null>(null);
   const [bookingState, setBookingState] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
 
@@ -135,8 +146,23 @@ export default function AppointmentSchedule() {
     setSelectedAppointmentId(null);
     setSelectedDateISO('');
     setSelectedSlot('');
+    setSelectedDay(null);
+    setSelectedHour(null);
     setAppointments([]);
   }, [selectedPatientId]);
+
+  // Al cambiar tipo de turno: resetear selecciones
+  useEffect(() => {
+    setSelectedOccupationId(undefined);
+    setProfessionals([]);
+    setSelectedProfessionalId(null);
+    setSelectedAppointmentId(null);
+    setSelectedDateISO('');
+    setSelectedSlot('');
+    setSelectedDay(null);
+    setSelectedHour(null);
+    setAppointments([]);
+  }, [appointmentType]);
 
 
   // especialidades (todas)
@@ -170,6 +196,8 @@ export default function AppointmentSchedule() {
     setSelectedAppointmentId(null);
     setSelectedDateISO('');
     setSelectedSlot('');
+    setSelectedDay(null);
+    setSelectedHour(null);
     setProfessionals([]);
 
     if (!selectedOccupationId) return;
@@ -204,9 +232,11 @@ export default function AppointmentSchedule() {
     };
   }, [selectedOccupationId]);
 
-  // ====== Turnos del mes ======
+  // ====== Turnos del mes (solo para ÚNICO) ======
   const currentMonthMeta = useMemo(() => getMonthMeta(today), [today]);
   useEffect(() => {
+    if (appointmentType !== 'único') return;
+    
     setSelectedDateISO('');
     setSelectedSlot('');
     if (!selectedProfessionalId) return;
@@ -255,9 +285,63 @@ export default function AppointmentSchedule() {
     return () => {
       cancelled = true;
     };
-  }, [selectedProfessionalId, currentMonthMeta]);
+  }, [selectedProfessionalId, currentMonthMeta, appointmentType]);
 
-  // ====== Derivados de UI ======
+  // ====== Turnos del mes (para SOSTENIDO - para obtener días disponibles) ======
+  useEffect(() => {
+    if (appointmentType !== 'sostenido') return;
+    
+    setSelectedDay(null);
+    setSelectedHour(null);
+    if (!selectedProfessionalId) return;
+
+    let cancelled = false;
+    (async () => {
+      try {
+        setError(null);
+        setLoadingMonth(true);
+
+        const res = await authFetch(`${API_BASE}/appointment/getAvailableAppointmentsByProfessional/${selectedProfessionalId}`, { 
+          method: 'GET' 
+        });
+
+        if (!res.ok) {
+          const toastData = await HandleAppointmentControllerResponse(res);
+          if (!cancelled) setToast(toastData);
+          return;
+        }
+
+        const all: Appointment[] = await res.json();
+      
+        const { year, month } = currentMonthMeta;
+        const start = new Date(year, month, 1);
+        const end = new Date(year, month + 1, 0);
+
+        const inMonth = all.filter(a => {
+          const iso = getLocalDateISOFromStart(a); // "YYYY-MM-DD" local
+          const [Y, M, D] = iso.split('-').map(Number);
+          const d = new Date(Y, M - 1, D);
+          return d >= start && d <= end;
+        });
+
+        if (!cancelled) setAppointments(inMonth);
+      } 
+      catch {
+        if (!cancelled) {
+          setToast({ message: 'Error al cargar turnos.', type: 'error' });
+          setAppointments([]);
+        }
+      } finally {
+        if (!cancelled) setLoadingMonth(false);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProfessionalId, currentMonthMeta, appointmentType]);
+
+  // ====== Derivados de UI (para ÚNICO) ======
   const daysArray = useMemo(() => {
     const { daysInMonth, leadingBlanks } = currentMonthMeta;
     const items: (number | null)[] = [];
@@ -329,14 +413,120 @@ export default function AppointmentSchedule() {
     return { disabled, available, iso };
   }
 
-  // ====== Confirmar turno ======
-  async function onConfirm() {
+  // ====== Derivados para SOSTENIDO ======
+  
+  // Días disponibles para turno sostenido (agrupados por día de la semana)
+  const availableDaysOfWeek = useMemo(() => {
+    if (appointmentType !== 'sostenido' || !selectedProfessionalId) return [];
+    
+    const now = new Date();
+    const daysMap = new Map<number, { count: number; available: number }>();
+    const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+    
+    // Las fechas en la BD están en hora local (Argentina), así que las parseamos tal cual
+    for (const a of appointments) {
+      if (String(a.professional) !== String(selectedProfessionalId)) continue;
+      
+      const d = new Date(a.startTime ?? '');
+      if (d <= now) continue; // Solo turnos futuros
+      
+      const dayOfWeek = d.getDay(); // Día en hora local
+      
+      // Solo días laborales (lunes a sábado)
+      if (dayOfWeek >= 1 && dayOfWeek <= 6) {
+        if (!daysMap.has(dayOfWeek)) {
+          daysMap.set(dayOfWeek, { count: 0, available: 0 });
+        }
+        const stats = daysMap.get(dayOfWeek)!;
+        stats.count++;
+        if (a.status === 'available') {
+          stats.available++;
+        }
+      }
+    }
+    
+    // Solo mostrar días donde al menos hay un horario con todos los turnos disponibles
+    const validDays: Array<{ value: number; label: string }> = [];
+    for (const [dayOfWeek, stats] of daysMap.entries()) {
+      if (stats.available > 0) {
+        validDays.push({ value: dayOfWeek, label: dayNames[dayOfWeek] });
+      }
+    }
+    
+    return validDays.sort((a, b) => a.value - b.value);
+  }, [appointments, selectedProfessionalId, appointmentType]);
+
+  // Horas disponibles para el día seleccionado en turno sostenido
+  const availableHours = useMemo(() => {
+    if (appointmentType !== 'sostenido' || !selectedProfessionalId || selectedDay === null) return [];
+    
+    const now = new Date();
+    
+    // Calcular cuántos días de ese tipo quedan en el mes actual (después de hoy)
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    let expectedDaysCount = 0;
+    for (let day = now.getDate() + 1; day <= lastDayOfMonth; day++) {
+      const testDate = new Date(currentYear, currentMonth, day);
+      if (testDate.getDay() === selectedDay) {
+        expectedDaysCount++;
+      }
+    }
+    
+    const hoursMap = new Map<number, { count: number; available: number }>();
+    
+    // Contar turnos por hora para el día seleccionado
+    for (const a of appointments) {
+      if (String(a.professional) !== String(selectedProfessionalId)) continue;
+      
+      const d = new Date(a.startTime ?? '');
+      if (d <= now) continue; // Solo turnos futuros
+      
+      const dayOfWeek = d.getDay();
+      
+      if (dayOfWeek === selectedDay) {
+        const hour = d.getHours();
+        
+        if (!hoursMap.has(hour)) {
+          hoursMap.set(hour, { count: 0, available: 0 });
+        }
+        const stats = hoursMap.get(hour)!;
+        stats.count++;
+        if (a.status === 'available') {
+          stats.available++;
+        }
+      }
+    }
+    
+    // Solo mostrar horas donde:
+    // 1. TODOS los turnos que existen están disponibles
+    // 2. La cantidad de turnos disponibles coincide con la cantidad esperada de días
+    const validHours: Array<{ value: number; label: string }> = [];
+    for (const [hour, stats] of hoursMap.entries()) {
+      if (
+        stats.available === expectedDaysCount && 
+        stats.count === stats.available
+      ) {
+        validHours.push({
+          value: hour,
+          label: `${String(hour).padStart(2, '0')}:00 hs`
+        });
+      }
+    }
+    
+    return validHours.sort((a, b) => a.value - b.value);
+  }, [appointments, selectedProfessionalId, selectedDay, appointmentType]);
+
+  // ====== Confirmar turno ÚNICO ======
+  async function onConfirmSingle() {
     if (!selectedOccupationId || !selectedProfessionalId || !selectedDateISO || !selectedSlot) return;
     setBookingState('submitting');
     setError(null);
 
-    const payload = { //el assign del back solamente usa id de turno e id de paciente
-      idAppointment: selectedAppointmentId, //ID DE TURNO
+    const payload = {
+      idAppointment: selectedAppointmentId,
       idPatient: selectedPatientId,
     };
 
@@ -347,6 +537,7 @@ export default function AppointmentSchedule() {
           message: "Seleccioná un paciente antes de confirmar el turno.",
           type: "error",
         });
+        setBookingState('idle');
         return;
       }
       
@@ -362,58 +553,172 @@ export default function AppointmentSchedule() {
         body: JSON.stringify(payload),
       });
 
-      // Mostrar toast SIEMPRE con el resultado
-      const toastData = await HandleAppointmentControllerResponse(res);
-      setToast(toastData);
-
       if (!res.ok) {
+        const toastData = await HandleAppointmentControllerResponse(res);
+        setToast(toastData);
         setBookingState('error');
         return;
       }
-      try {
-        const resAll = await authFetch(`${API_BASE}/appointment/getAll`, { method: 'GET' });
-        if (resAll.ok) {
-          const all: Appointment[] = await resAll.json();
 
-
-          const { year, month } = currentMonthMeta;
-          const start = new Date(year, month, 1);
-          const end   = new Date(year, month + 1, 0);
-          const normalizeDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate());
-
-          const inMonth = all.filter((a) => {
-            const dLocal = new Date(a.startTime ?? '');
-            const day    = normalizeDay(dLocal);
-            return day >= start && day <= end;
-          });
-
-          setAppointments(inMonth);
-        } else {
-          const td = await HandleAppointmentControllerResponse(resAll);
-          setToast(td);
+      // Obtener el turno completo (populated) para mostrar en la constancia
+      const result = await res.json();
+      const appointmentId = result.appointment?.id;
+      
+      if (appointmentId && selectedPatientId) {
+        // Usar endpoint del paciente que devuelve datos completos poblados
+        const detailRes = await authFetch(`${API_BASE}/appointment/getAppointmentsByPatient/${selectedPatientId}`, { method: 'GET' });
+        if (detailRes.ok) {
+          const patientAppts: PopulatedAppointment[] = await detailRes.json();
+          const fullAppt = patientAppts.find(a => a.id === appointmentId);
+          if (fullAppt) {
+            setBookedAppointment(fullAppt);
+            setShowReceipt(true);
+            setBookingState('success');
+          }
         }
-      } catch {
-        // Si falla el refresco, no rompemos el success del modal
       }
 
-      setBookingState('success');
     } catch {
       setToast({ message: 'No se pudo confirmar el turno.', type: 'error' });
       setBookingState('error');
     }
   }
 
+  // ====== Confirmar turno SOSTENIDO ======
+  async function onConfirmSeries() {
+    if (!selectedProfessionalId || !selectedPatientId || selectedDay === null || selectedHour === null) return;
+    setBookingState('submitting');
+    setError(null);
+
+    const { year, month } = currentMonthMeta;
+
+    const payload = {
+      idProfessional: selectedProfessionalId,
+      idPatient: selectedPatientId,
+      day: selectedDay, // DayOfWeek enum (1=lunes, 2=martes, etc.)
+      hour: selectedHour, // 0-23
+      validMonth: month + 1, // JavaScript month is 0-indexed, backend expects 1-indexed
+      validYear: year,
+    };
+
+    console.log('🔍 DEBUG - Enviando payload:', payload);
+    
+    // Debug: ver TODOS los turnos del profesional (viernes 11:00, cualquier estado)
+    console.log('🔍 DEBUG - TODOS los turnos del profesional (viernes 11:00):');
+    appointments
+      .filter(a => {
+        if (String(a.professional) !== String(selectedProfessionalId)) return false;
+        const d = new Date(a.startTime ?? '');
+        return d.getDay() === selectedDay && d.getHours() === selectedHour;
+      })
+      .forEach(a => {
+        const d = new Date(a.startTime ?? '');
+        console.log(`  - ${a.startTime} → ${d.toLocaleString()} → Status: ${a.status} → ID: ${a.id}`);
+      });
+    
+    console.log('🔍 DEBUG - Turnos disponibles para verificar:', appointments.filter(a => {
+      const d = new Date(a.startTime ?? '');
+      return d.getDay() === selectedDay && d.getHours() === selectedHour && a.status === 'available';
+    }).length);
+    
+    // Debug: ver las fechas exactas de esos turnos
+    const matchingAppts = appointments.filter(a => {
+      const d = new Date(a.startTime ?? '');
+      return d.getDay() === selectedDay && d.getHours() === selectedHour && a.status === 'available';
+    });
+    console.log('🔍 DEBUG - Fechas de los turnos coincidentes:');
+    matchingAppts.forEach(a => {
+      const d = new Date(a.startTime ?? '');
+      console.log(`  - ${a.startTime} → Local: ${d.toLocaleString()} → Day: ${d.getDay()}, Hour: ${d.getHours()}`);
+    });
+
+    try {
+      const res = await authFetch(`${API_BASE}/appointment/assignSeries`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const toastData = await HandleAppointmentControllerResponse(res);
+        setToast(toastData);
+        setBookingState('error');
+        return;
+      }
+
+      // Obtener el primer turno de la serie para mostrar en la constancia
+      const result = await res.json();
+      const appointments = result.appointment;
+      
+      if (appointments && appointments.length > 0 && selectedPatientId) {
+        // Buscar el primer appointment de la serie con datos completos
+        const firstApptId = appointments[0].id;
+        
+        // Usar endpoint del paciente que devuelve datos completos poblados
+        const detailRes = await authFetch(`${API_BASE}/appointment/getAppointmentsByPatient/${selectedPatientId}`, { method: 'GET' });
+        if (detailRes.ok) {
+          const patientAppts: PopulatedAppointment[] = await detailRes.json();
+          const fullAppt = patientAppts.find(a => a.id === firstApptId);
+          if (fullAppt) {
+            setBookedAppointment(fullAppt);
+            setShowReceipt(true);
+            setBookingState('success');
+          }
+        }
+      }
+
+    } catch {
+      setToast({ message: 'No se pudo confirmar el turno sostenido.', type: 'error' });
+      setBookingState('error');
+    }
+  }
+
+  // ====== Navegar de vuelta al portal ======
+  function handleBackToPortal() {
+    setShowReceipt(false);
+    setBookingState('idle');
+    
+    // Navegar según el rol
+    if (isPatient) {
+      navigate('/patient-portal');
+    } else if (isLegalGuardian) {
+      navigate('/legal-guardian-portal');
+    } else if (isAdmin) {
+      navigate('/');
+    } else {
+      navigate('/');
+    }
+  }
+
+  const selectedPatientName = patients.find(p => p.id === selectedPatientId)
+    ? `${patients.find(p => p.id === selectedPatientId)!.firstName} ${patients.find(p => p.id === selectedPatientId)!.lastName}`
+    : "";
+
   return (
   <>
   <AppointmentScheduleForm
+    // Tipo de turno
+    appointmentType={appointmentType}
+    onChangeAppointmentType={setAppointmentType}
+    
+    // Pacientes
     patients={patients}
     loadingPatients={loadingPatients}
     selectedPatientId={selectedPatientId}
     onChangePatient={setSelectedPatientId}
+    showPatientSelect={!isPatient}
+    
+    // Especialidades y profesionales
     occupations={occupations}
     professionals={professionals}
     loadingMeta={loadingMeta}
     loadingProfessionals={loadingProfessionals}
+    selectedOccupationId={selectedOccupationId}
+    selectedProfessionalId={selectedProfessionalId}
+    onChangeOccupation={setSelectedOccupationId}
+    onChangeProfessional={setSelectedProfessionalId}
+    
+    // Para turno ÚNICO
     monthLabel={monthLabel}
     daysArray={daysArray}
     dayState={dayState}
@@ -421,18 +726,8 @@ export default function AppointmentSchedule() {
     loadingMonth={loadingMonth}
     slots={slots}
     loadingSlots={loadingSlots}
-    showPatientSelect={!isPatient}
-    selectedOccupationId={selectedOccupationId}
-    selectedProfessionalId={selectedProfessionalId}
     selectedDateISO={selectedDateISO}
     selectedSlot={selectedSlot}
-    selectedOccupationName={occupations.find((s) => s.id === selectedOccupationId)?.name}
-    selectedProfessionalFullName={fullName(
-      professionals.find((p) => p.id === selectedProfessionalId)
-    )}
-    error={error}
-    onChangeOccupation={setSelectedOccupationId}
-    onChangeProfessional={setSelectedProfessionalId}
     onPickDay={(iso) => {
       setSelectedDateISO(iso);
       setSelectedSlot('');
@@ -440,20 +735,23 @@ export default function AppointmentSchedule() {
     }}
     onPickSlot={(hhmm: string) => {
       setSelectedSlot(hhmm);
-      setSelectedAppointmentId(slotIdMap.get(hhmm) ?? null); // <-- clave
+      setSelectedAppointmentId(slotIdMap.get(hhmm) ?? null);
     }}
-    onOpenConfirm={() => setConfirmOpen(true)}
-    onCloseConfirm={() => {
-      setConfirmOpen(false);
-      setBookingState('idle');
-    }}
-    onConfirm={onConfirm}   // <-- usar la función real
-    confirmOpen={confirmOpen}
-    bookingState={bookingState}
-
     
-
-
+    // Para turno SOSTENIDO
+    availableDaysOfWeek={availableDaysOfWeek}
+    availableHours={availableHours}
+    selectedDay={selectedDay}
+    selectedHour={selectedHour}
+    onChangeDay={setSelectedDay}
+    onChangeHour={setSelectedHour}
+    
+    // Acciones
+    onConfirmSingle={onConfirmSingle}
+    onConfirmSeries={onConfirmSeries}
+    onBack={handleBackToPortal}
+    bookingState={bookingState}
+    error={error}
   />
 
    {/* Toast */}
@@ -464,6 +762,16 @@ export default function AppointmentSchedule() {
         onClose={() => setToast(null)}
       />
     )}
+
+    {/* Modal de constancia */}
+    <AppointmentReceiptModal
+      open={showReceipt}
+      onClose={handleBackToPortal}
+      appointment={bookedAppointment}
+      appointmentType={appointmentType ?? 'único'}
+      patientName={selectedPatientName}
+      isLegalGuardian={isLegalGuardian}
+    />
     
   </>
 

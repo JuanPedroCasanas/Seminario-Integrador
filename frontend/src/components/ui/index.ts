@@ -35,6 +35,7 @@ export { SlotsCarousel } from './Schedule/SlotsCarousel/SlotsCarousel';
 export { StickyCTA } from './Schedule/StickyCTA/StickyCTA';
 export { TimeSlotGrid } from './Schedule/TimeSlotGrid/TimeSlotGrid';
 export { WeekdaySelector } from './Schedule/WeekdaySelector/WeekdaySelector';
+export { AppointmentReceiptModal } from './Schedule/AppointmentReceiptModal/AppointmentReceiptModal';
 
 // Forms
 export { FormField } from "./Forms/FormField/FormField";

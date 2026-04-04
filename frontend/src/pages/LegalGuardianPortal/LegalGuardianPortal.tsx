@@ -17,7 +17,6 @@ export default function LegalGuardianPortal() {
       <ActionGrid>
 
         <NavButton to="/appointment-schedule">Reservar turno</NavButton>
-        <NavButton to="/appointment-series-schedule">Reservar turno sostenido</NavButton>
         <NavButton to="/guarded-patients">Pacientes a cargo</NavButton>
 
         <NavButton to="/edit-profile">Editar perfil</NavButton>
