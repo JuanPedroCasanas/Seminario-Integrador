@@ -11,28 +11,25 @@ export default function PatientPortal() {
     <Page>
       <SectionHeader
         title="Portal Paciente"
-        subtitle="Selecciona la acción a realizar"
       />
 
       <ActionGrid>
-
         <NavButton to="/appointment-schedule">Reservar turno</NavButton>
-
-        <NavButton to="/edit-profile">Editar perfil</NavButton>
-
       </ActionGrid>
 
     <div className="mt-6">
+      <h3 className="text-lg font-semibold text-gray-900 mb-3">Próximos turnos:</h3>
       <PatientAppointmentsCard />
     </div>
 
+{/* Toast 
     {toastMessage && (
       <Toast
         message={toastMessage.message}
         type={toastMessage.type}
         onClose={() => {}}
       />
-    )}
+    )}*/}
 
     </Page>
   );

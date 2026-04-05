@@ -59,8 +59,10 @@ export const Toast: React.FC<ToastProps> = ({
   }, [key, duration, onClose]); // el timer depende del key interno
 
   return (
+
     <div key={key} className={`hi-toast hi-toast--${type}`}>
       {visibleMessage}
     </div>
+
   );
 };

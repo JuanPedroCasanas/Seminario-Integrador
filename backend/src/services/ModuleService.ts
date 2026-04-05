@@ -245,8 +245,8 @@ export default class ModuleService {
         }
 
         for (const mod of modules) {
-            if (mod.status === ModuleStatus.ToBePaid || mod.status === ModuleStatus.Canceled) {
-                throw new InvalidParameterError('Solo se pueden renovar modulos que hayan sido pagados');
+            if (mod.status === ModuleStatus.Canceled) {
+                throw new InvalidParameterError('Solo se pueden renovar modulos a pagar o que hayan sido pagados');
             }
         }
 

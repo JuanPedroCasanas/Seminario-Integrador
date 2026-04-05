@@ -295,8 +295,8 @@ export default function ProfessionalHealthInsurances(){
         </Modal>
       )}
 
-      {/* Toast */}
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {/* Toast 
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}*/}
     </Page>
 
 

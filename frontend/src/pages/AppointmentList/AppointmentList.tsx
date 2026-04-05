@@ -115,8 +115,9 @@ export default function AppointmentList() {
             </PrimaryButton>
           </div>
         </Card>
+{/* 
+        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}*/}
 
-        {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
       </Page>
     );
   }
@@ -130,7 +131,8 @@ export default function AppointmentList() {
         dateFormatted={todayFormatted}
         onBack={handleBack}
       />
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {/* 
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}*/}
     </Page>
   );
 }

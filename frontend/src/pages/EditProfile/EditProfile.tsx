@@ -461,14 +461,14 @@ export default function EditProfile() {
 
         </main>
 
-        {/* ===== TOAST ===== */}
+        {/* ===== TOAST ===== 
         {toast && (
         <Toast
             message={toast.message}
             type={toast.type}
             onClose={() => setToast(null)}
         />
-        )}
+        )}*/}
 
     </Page>
 

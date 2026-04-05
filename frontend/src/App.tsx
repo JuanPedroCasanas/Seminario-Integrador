@@ -24,8 +24,8 @@ export default function App() {
         <Routes>
 
         {/* ACCESO PUBLICO: */}
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/" element={<Login />} />
           <Route path="/register" element={<Register />} />
           
         {/* USUARIOS LOGUEADOS: */}
@@ -117,7 +117,7 @@ export default function App() {
          </div>
       </main>
 
-      <Footer / >
+      {/* <Footer / > */}
 
     </div>
   );

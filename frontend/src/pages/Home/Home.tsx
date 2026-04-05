@@ -60,14 +60,15 @@ export default function Home() {
             </div>
           </div>
 
-
+{/*
       {toastMessage && (
         <Toast
           message={toastMessage.message}
           type={toastMessage.type}
           onClose={() => {}}
         />
-      )}
+      )}*/}
+      
     </Page>
   );
 }

@@ -34,8 +34,26 @@ export default function Navbar() {
   else if (user?.role === UserRole.LegalGuardian) profile = user.legalGuardian;
  // else if (user?.role === UserRole.Admin) profile = user; 
 
+  const firstName = profile?.firstName || "";
+  const lastName = profile?.lastName || "";
 
-  const displayName = profile ? `${profile.firstName} ${profile.lastName}` : "";
+  // Helper para obtener la ruta del portal según el rol
+  const getPortalRoute = () => {
+    if (!user?.role) return "/";
+    
+    switch (user.role) {
+      case UserRole.Patient:
+        return "/patient-portal";
+      case UserRole.LegalGuardian:
+        return "/legal-guardian-portal";
+      case UserRole.Professional:
+        return "/professional-portal";
+      case UserRole.Admin:
+        return "/debug-console";
+      default:
+        return "/";
+    }
+  };
 
   
   // Sombra al hacer scroll
@@ -84,11 +102,6 @@ export default function Navbar() {
       {/* Wrapper interno */}
       <div className="h-[var(--nav-h)] md:h-[90px] max-w-6xl mx-auto flex items-center gap-3 py-2 md:py-0">
 
-        <NavLink
-          to="/"
-          className="inline-flex items-center gap-3 font-bold text-base md:text-lg select-none"
-          aria-label="Ir a inicio"
-        >
           <img
             src="/icons/brain.png"
             alt="Logo Narrativas"
@@ -97,7 +110,6 @@ export default function Navbar() {
             decoding="async"
           />
           <span className="leading-none">Narrativas</span>
-        </NavLink>
 
         {/* Toggle */}
         <button
@@ -136,8 +148,8 @@ export default function Navbar() {
 
         {/* Menú desktop */}
         <div className="hidden md:flex items-center gap-1 ml-4">
-          <NavLink to="/" className={linkClass}>
-            Inicio
+          <NavLink to={getPortalRoute()} className={linkClass}>
+            PORTAL DE INICIO
           </NavLink>
         </div>
         
@@ -148,16 +160,17 @@ export default function Navbar() {
           {isLoggedIn ? (
             <>
             <NavButton to="/edit-profile">
-              {roleText && `${roleText}: `}{displayName || "Mi perfil"}
+              {firstName && <span>Nombre: {firstName}</span>}
+              {lastName && <span className="ml-2">Apellido: {lastName}</span>}
+              {roleText && <span className="ml-2">Perfil: {roleText}</span>}
+              {!firstName && !lastName && "Mi perfil"}
             </NavButton>
 
-            <LogoutButton />
+      {/* <LogoutButton /> */}
+            
             </>
           ) : (
             <>
-              <NavButton to="/register" > Registrarse </NavButton>
-
-              <NavButton to="/login" variant="ghost"> Iniciar sesión </NavButton>
             </>
           )}
         </div>
@@ -175,13 +188,8 @@ export default function Navbar() {
           open ? "block" : "hidden",
         ].join(" ")}
       >
-        {/* Links principales */}
-        <ul className="grid gap-2 list-none p-0 m-0">
-          <li>
-            <NavLink to="/" className={linkClass}>
-              Portales
-            </NavLink>
-          </li>
+        {/* Links princi{getPortalRoute()} className={linkClass}>
+              Portal de inicio
           <li>
             <NavLink to="/about" className={linkClass}>
               Sobre nosotros
@@ -197,24 +205,15 @@ export default function Navbar() {
               className="col-span-2 w-full px-3 py-2 rounded-lg bg-cyan-600 text-white text-center hover:bg-cyan-700 transition-colors"
               onClick={() => setOpen(false)}
             >
-              {roleText && `${roleText}: `}{displayName || "Mi perfil"}
+              <div className="flex flex-col items-center gap-1 text-sm">
+                {firstName && <span>Nombre: {firstName}</span>}
+                {lastName && <span>Apellido: {lastName}</span>}
+                {roleText && <span>Perfil: {roleText}</span>}
+                {!firstName && !lastName && <span>Mi perfil</span>}
+              </div>
             </NavLink>
           ) : (
             <>
-              <NavLink
-                to="/register"
-                className="w-full px-3 py-2 rounded-lg bg-cyan-600 text-white text-center hover:bg-cyan-700 transition-colors"
-                onClick={() => setOpen(false)}
-              >
-                Registrarse
-              </NavLink>
-              <NavLink
-                to="/login"
-                className="w-full px-3 py-2 rounded-lg bg-gray-100 text-gray-900 text-center hover:bg-gray-200 border border-black/10 transition-colors"
-                onClick={() => setOpen(false)}
-              >
-                Iniciar sesión
-              </NavLink>
             </>
           )}
         </div>

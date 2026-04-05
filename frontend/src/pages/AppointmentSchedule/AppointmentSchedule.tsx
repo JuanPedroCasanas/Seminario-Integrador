@@ -754,14 +754,14 @@ export default function AppointmentSchedule() {
     error={error}
   />
 
-   {/* Toast */}
+   {/* Toast 
     {toast && (
       <Toast
         message={toast.message}
         type={toast.type}
         onClose={() => setToast(null)}
       />
-    )}
+    )}*/}
 
     {/* Modal de constancia */}
     <AppointmentReceiptModal

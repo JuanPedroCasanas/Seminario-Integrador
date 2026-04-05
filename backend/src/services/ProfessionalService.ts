@@ -198,11 +198,24 @@ export class ProfessionalService {
         await professional.modules.init();
 
         for (const appointment of professional.appointments) {
-            appointment.status = AppointmentStatus.Canceled;
+            if (appointment.status === AppointmentStatus.Scheduled || appointment.status === AppointmentStatus.Available) {
+                appointment.status = AppointmentStatus.Canceled;
+            }  
         }
 
+        // Obtener mes y año actual
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1; // getMonth() devuelve 0-11
+        const currentYear = now.getFullYear();
+
+        // Cancelar solo módulos del mes y año vigente
         for (const module of professional.modules) {
-            module.status = ModuleStatus.Canceled;
+            if (module.validMonth === currentMonth && 
+                module.validYear === currentYear && 
+                module.status !== ModuleStatus.Canceled) 
+            {
+                module.status = ModuleStatus.Canceled;
+            }
         }
 
         await em.flush();

@@ -58,7 +58,7 @@ export const AppointmentReceiptModal: React.FC<Props> = ({
   const consultingRoomDescription = appointment.consultingRoom?.description ?? "";
 
   const items: Array<{ label: string; value: string }> = [
-    { label: "Turno", value: `${appointment.id}` },
+    { label: "Turno", value: `${appointmentType === "sostenido" && appointment.series?.id ? appointment.series.id : appointment.id}` },
   ];
 
   // Para turno sostenido, mostrar el día de la semana en lugar de la fecha

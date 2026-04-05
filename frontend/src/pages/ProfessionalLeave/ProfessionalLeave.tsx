@@ -84,8 +84,8 @@ export default function ProfessionalLeave() {
         canConfirm={!!canConfirm}
       />
 
-      {/* Toast */}
-      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
+      {/* Toast
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />} */}
     </>
   );
 }

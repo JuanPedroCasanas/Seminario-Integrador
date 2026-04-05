@@ -100,6 +100,15 @@ export class HealthInsuranceService {
             throw new NotFoundError('Obra Social');
         }
 
+        // Cargar todos los profesionales asociados a esta obra social
+        await healthInsurance.professionals.init();
+
+        // Remover la obra social de todos los profesionales
+        for (const professional of healthInsurance.professionals) {
+            await professional.healthInsurances.init();
+            professional.healthInsurances.remove(healthInsurance);
+        }
+
         healthInsurance.isActive = false;
 
         await em.flush();

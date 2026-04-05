@@ -27,13 +27,14 @@ export default function ProfessionalPortal() {
         </p>
       </div>
 
-      {toastMessage && (
-        <Toast
-          message={toastMessage.message}
-          type={toastMessage.type}
-          onClose={() => {}}
-        />
-      )}
+{/* Toast 
+    {toastMessage && (
+      <Toast
+        message={toastMessage.message}
+        type={toastMessage.type}
+        onClose={() => {}}
+      />
+    )}*/}
 
     </Page>
   );

@@ -338,10 +338,11 @@ export default function ModuleRent() {
         onConfirm={onConfirm}
       />
 
-      {/* Toast */}
+      {/* Toast 
       {toast && (
         <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />
-      )}
+      )}*/}
+      
     </Page>
 
 

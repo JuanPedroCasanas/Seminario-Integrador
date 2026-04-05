@@ -54,7 +54,7 @@ export default function DebugConsolePage() {
         <NavButton to="/module-list">Listado de Módulos</NavButton>
         <NavButton to="/appointment-list">Listado de turnos por profesional</NavButton>
       </ActionGrid>
-*/}
+
 
     {toastMessage && (
       <Toast
@@ -62,7 +62,7 @@ export default function DebugConsolePage() {
         type={toastMessage.type}
         onClose={() => {}}
       />
-    )}
+    )}*/}
     </Page>
   );
 }
