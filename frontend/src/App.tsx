@@ -3,7 +3,7 @@ import Navbar from "./components/Layout/Navbar/Navbar";
 import { UserRole } from "./common/types";
 
 import { Home, Login, Register, ModuleRent, AppointmentSchedule, ProfessionalLeave, ProfessionalLeaves, EditProfile, ProfessionalPortal, LegalGuardianPortal, PatientPortal, GuardedPatients, ModuleList, AppointmentList, DebugConsole, ConsultingRooms, HealthInsurances, Occupations,
-Professionals, ProfessionalHealthInsurances
+Professionals, ProfessionalHealthInsurances, ProfessionalModules
 } from "./pages";
 
 import AuthWatcher from "./common/utils/auth/AuthWatcher";
@@ -48,6 +48,9 @@ export default function App() {
 
           <Route path="/professional-health-insurances" element=
             {<ProfessionalHealthInsurances />} />
+
+          <Route path="/professional-modules" element=
+            {<ProfessionalModules />} />
 
           <Route path="/module-rent" element=
             {<ModuleRent />} />

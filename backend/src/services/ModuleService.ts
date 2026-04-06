@@ -300,4 +300,28 @@ export default class ModuleService {
 
         return createdModules;
     }
+
+    static async getModulesByProfessional(idProfessional: number) {
+        const em = await getORM().em.fork();
+
+        const professional = await em.findOne(Professional, { id: idProfessional });
+
+        if (!professional || !professional.isActive) {
+            throw new NotFoundError('Profesional');
+        }
+
+        const modules = await em.find(
+            Module,
+            { 
+                professional: professional,
+                status: { $ne: ModuleStatus.Canceled }
+            },
+            { 
+                populate: ['professional', 'consultingRoom', 'moduleType'],
+                orderBy: { validYear: 'DESC', validMonth: 'DESC', day: 'ASC', startTime: 'ASC' }
+            }
+        );
+
+        return modules;
+    }
 }

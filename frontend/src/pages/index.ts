@@ -49,5 +49,8 @@ export { default as ProfessionalLeave } from "./ProfessionalLeave/ProfessionalLe
 // Professional Leaves
 export { default as ProfessionalLeaves } from "./ProfessionalLeaves/ProfessionalLeaves";
 
+// Professional Modules
+export { default as ProfessionalModules } from "./ProfessionalModules/ProfessionalModules";
+
 // Register
 export { default as Register } from "./Register/Register";

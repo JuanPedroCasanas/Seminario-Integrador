@@ -4,6 +4,7 @@ import { validate } from '../utils/validations/validate';
 import { addModuleSchema } from '../utils/validations/schema/module/addModuleSchema';
 import { getModuleSchema } from '../utils/validations/schema/module/getModuleSchema';
 import { getCurrentMonthModulesByConsultingRoomModuleSchema } from '../utils/validations/schema/module/getCurrentMonthModulesByConsultingRoomModuleSchema';
+import { getByProfessionalModuleSchema } from '../utils/validations/schema/module/getByProfessionalModuleSchema';
 import { authJwt } from '../utils/auth/jwt';
 import { authRoles } from '../utils/auth/roles';
 import { UserRole } from '../utils/enums/UserRole';
@@ -217,6 +218,54 @@ router.get(
   validate(getCurrentMonthModulesByConsultingRoomModuleSchema),
   authJwt,
   ModuleController.getCurrentMonthModulesByConsultingRoom
+);
+
+/**
+ * @swagger
+ * /module/getByProfessional/{idProfessional}:
+ *   get:
+ *     summary: Obtener módulos por Profesional
+ *     tags: [Módulos]
+ *     parameters:
+ *       - in: path
+ *         name: idProfessional
+ *         required: true
+ *         description: ID del profesional a filtrar
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Lista de módulos del profesional
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                   day:
+ *                     type: string
+ *                   startTime:
+ *                     type: string
+ *                   endTime:
+ *                     type: string
+ *                   consultingRoom:
+ *                     type: object
+ *                   moduleType:
+ *                     type: object
+ *       403:
+ *         description: No tienes permiso
+ *       404:
+ *         description: Profesional no encontrado
+ */
+router.get(
+  '/getByProfessional/:idProfessional',
+  validate(getByProfessionalModuleSchema),
+  authJwt,
+  authRoles([UserRole.Professional, UserRole.Admin]),
+  ModuleController.getModulesByProfessional
 );
 
 export default router;

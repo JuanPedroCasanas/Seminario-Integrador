@@ -14,7 +14,7 @@ export default function ProfessionalPortal() {
       />
 
       <ActionGrid>
-        <NavButton to="/module-list">Ver mis módulos</NavButton>
+        <NavButton to="/professional-modules">Ver mis módulos</NavButton>
         <NavButton to="/module-rent">Alquilar nuevo(s) módulo(s)</NavButton>
         <NavButton to="/professional-leaves">Ver mis licencias</NavButton>
         <NavButton to="/professional-health-insurances">Obras Sociales</NavButton>

@@ -113,4 +113,22 @@ export default class ModuleController {
             }
         }
     }
+
+    static async getModulesByProfessional(req: Request, res: Response) {
+        const idProfessional = Number(req.params.idProfessional);
+
+        try {
+            const modules = await ModuleService.getModulesByProfessional(idProfessional);
+            return res.status(200).json(safeSerialize(modules));
+
+        } catch (error) {
+            console.error(error);
+            if (error instanceof BaseHttpError) {
+                return res.status(error.status).json(error.toJSON());
+            }
+            else {
+                return res.status(500).json({ message: 'Error al buscar modulos por profesional' });
+            }
+        }
+    }
 }
