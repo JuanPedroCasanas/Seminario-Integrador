@@ -38,8 +38,8 @@ export class LeaveService {
 
         for (const appointment of appointments) {
             if(appointment.status === AppointmentStatus.Scheduled ||
-                 appointment.status != AppointmentStatus.Available)
-            appointment.status = AppointmentStatus.Canceled;
+                 appointment.status === AppointmentStatus.Available)
+            appointment.status = AppointmentStatus.CanceledDueToLeave;
         }
 
 
