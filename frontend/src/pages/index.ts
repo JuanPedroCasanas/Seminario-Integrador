@@ -34,6 +34,9 @@ export { default as ModuleList } from "./ModuleList/ModuleList";
 // Module Rent
 export { default as ModuleRent } from "./ModuleRent/ModuleRent";
 
+// Module Renew
+export { default as ModuleRenew } from "./ModuleRenew/ModuleRenew";
+
 // Patient Portal
 export { default as PatientPortal } from "./PatientPortal/PatientPortal";
 

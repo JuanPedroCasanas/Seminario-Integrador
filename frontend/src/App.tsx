@@ -2,7 +2,7 @@ import { Routes, Route } from "react-router-dom";
 import Navbar from "./components/Layout/Navbar/Navbar";
 import { UserRole } from "./common/types";
 
-import { Home, Login, Register, ModuleRent, AppointmentSchedule, ProfessionalLeave, ProfessionalLeaves, EditProfile, ProfessionalPortal, LegalGuardianPortal, PatientPortal, GuardedPatients, ModuleList, AppointmentList, DebugConsole, ConsultingRooms, HealthInsurances, Occupations,
+import { Home, Login, Register, ModuleRent, ModuleRenew, AppointmentSchedule, ProfessionalLeave, ProfessionalLeaves, EditProfile, ProfessionalPortal, LegalGuardianPortal, PatientPortal, GuardedPatients, ModuleList, AppointmentList, DebugConsole, ConsultingRooms, HealthInsurances, Occupations,
 Professionals, ProfessionalHealthInsurances, ProfessionalModules
 } from "./pages";
 
@@ -54,6 +54,9 @@ export default function App() {
 
           <Route path="/module-rent" element=
             {<ModuleRent />} />
+
+          <Route path="/module-renew" element=
+            {<ModuleRenew />} />
         
           <Route path="/appointment-list" element=
             {<AppointmentList/>} />
