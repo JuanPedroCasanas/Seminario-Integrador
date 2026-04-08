@@ -227,7 +227,7 @@ export default function PrintableModuleReport({
       case 'paid':
         return 'Pagado';
       case 'toBePaid':
-        return 'Por pagar';
+        return 'A pagar';
       case 'canceled':
         return 'Cancelado';
       default:
