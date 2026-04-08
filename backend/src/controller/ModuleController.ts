@@ -14,7 +14,8 @@ export default class ModuleController {
             validMonth,
             validYear,
             idProfessional,
-            idConsultingRoom
+            idConsultingRoom,
+            isPaid
         } = req.body;
 
         try {
@@ -25,7 +26,8 @@ export default class ModuleController {
                 Number(validMonth),
                 Number(validYear),
                 Number(idProfessional),
-                Number(idConsultingRoom)
+                Number(idConsultingRoom),
+                isPaid
             );
 
             return res.status(201).json({

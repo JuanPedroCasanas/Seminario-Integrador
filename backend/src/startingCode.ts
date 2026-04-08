@@ -45,9 +45,9 @@ export const startingCode = async () => {
 
 
     //Agrego module types
-    const mt1 = new ModuleType('COMPLETO', 6);
-    const mt2 = new ModuleType('MEDIO', 3);
-    const mt3 = new ModuleType('SEXTO', 1);
+    const mt1 = new ModuleType('COMPLETO', 6, 50000);
+    const mt2 = new ModuleType('MEDIO', 3, 30000);
+    const mt3 = new ModuleType('SEXTO', 1, 20000);
 
     em.persist(mt1);
     em.persist(mt2);

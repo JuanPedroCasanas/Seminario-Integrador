@@ -45,7 +45,24 @@ export const validYear = z
   .int()
   .positive();
 
-  export const moduleIds = z
-      .array(z.number())
-      .nonempty("Debe enviar al menos un id de módulo");
+const renewModuleItem = z.object({
+  id: z.number({
+    required_error: "Se requiere el id del módulo.",
+    invalid_type_error: "El id debe ser numérico."
+  }).int().positive(),
 
+  isPaid: z.boolean({
+    required_error: "Se requiere especificar si el módulo está pago.",
+    invalid_type_error: "isPaid debe ser booleano (true o false)."
+  })
+});
+
+export const moduleIds = z
+  .array(renewModuleItem)
+  .nonempty("Debe enviar al menos un módulo a renovar");
+
+export const isPaid = z
+  .boolean({
+    required_error: "Se requiere especificar si el módulo está pago.",
+    invalid_type_error: "El campo de pagado debe ser booleano (true o false)."
+  });

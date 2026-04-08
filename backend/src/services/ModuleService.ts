@@ -8,6 +8,7 @@ import { AppointmentStatus } from '../utils/enums/AppointmentStatus';
 import { ModuleStatus } from '../utils/enums/ModuleStatus';
 import { DayOfWeek } from '../utils/enums/DayOfWeek';
 import { BaseHttpError, ModuleScheduleConflictError, NotConfiguredError, NotFoundError, InvalidParameterError } from '../utils/errors/BaseHttpError';
+import { RenewModuleDto } from '../utils/dto/module/RenewModuleDto';
 
 export default class ModuleService {
 
@@ -54,7 +55,8 @@ export default class ModuleService {
         validMonth: number,
         validYear: number,
         idProfessional: number,
-        idConsultingRoom: number
+        idConsultingRoom: number,
+        isPaid: boolean
     ) {
         const em = await getORM().em.fork();
 
@@ -105,6 +107,13 @@ export default class ModuleService {
         for (let i = 0; i < moduleTypeAmount.length; i++) {
             const amount = moduleTypeAmount[i];
             const moduleType = moduleTypes[i];
+            let moduleStatus: ModuleStatus;
+
+            if(isPaid) {
+                moduleStatus = ModuleStatus.Paid
+            } else {
+                moduleStatus = ModuleStatus.ToBePaid
+            }
 
             for (let j = 0; j < amount; j++) {
                 const newMod = new Module(
@@ -114,7 +123,8 @@ export default class ModuleService {
                     Number(validYear),
                     professional,
                     consultingRoom,
-                    moduleType
+                    moduleType,
+                    moduleStatus
                 );
 
                 modules.push(newMod);
@@ -217,90 +227,6 @@ export default class ModuleService {
         return modules;
     }
 
-    static async renewModules(moduleIds: number[]) {
-        const em = await getORM().em.fork();
-
-        if (!moduleIds || moduleIds.length === 0) {
-            throw new InvalidParameterError('moduleIds (Arreglo vacio)');
-        }
-
-        const modules = await em.find(
-            Module,
-            { id: { $in: moduleIds } },
-            { populate: ['professional', 'consultingRoom'] }
-        );
-
-        if (modules.length === 0) {
-            throw new NotFoundError('Modulos');
-        }
-
-        const now = new Date();
-        const currentMonth = now.getMonth() + 1;
-        const currentYear = now.getFullYear();
-
-        for (const mod of modules) {
-            if (mod.validMonth !== currentMonth || mod.validYear !== currentYear) {
-                throw new InvalidParameterError('Solo se pueden renovar modulos del mes vigente');
-            }
-        }
-
-        for (const mod of modules) {
-            if (mod.status === ModuleStatus.Canceled) {
-                throw new InvalidParameterError('Solo se pueden renovar modulos a pagar o que hayan sido pagados');
-            }
-        }
-
-        const professional = modules[0].professional;
-        for (const mod of modules) {
-            if (mod.professional.id !== professional.id) {
-                throw new InvalidParameterError('Modulos de distintos profesionales');
-            }
-        }
-
-        const baseMonth = modules[0].validMonth;
-        const baseYear = modules[0].validYear;
-
-        let nextMonth = baseMonth + 1;
-        let nextYear = baseYear;
-
-        if (nextMonth > 12) {
-            nextMonth = 1;
-            nextYear++;
-        }
-
-        const grouped = new Map<string, Module[]>();
-
-        for (const mod of modules) {
-            const key = `${mod.day}-${mod.consultingRoom.id}-${mod.startTime}-${mod.endTime}`;
-
-            if (!grouped.has(key)) {
-                grouped.set(key, []);
-            }
-
-            grouped.get(key)!.push(mod);
-        }
-
-        const createdModules: Module[] = [];
-
-        for (const group of grouped.values()) {
-            const base = group[0];
-
-            const newModules = await ModuleService.addModules(
-                base.day,
-                base.startTime,
-                base.endTime,
-                nextMonth,
-                nextYear,
-                professional.id,
-                base.consultingRoom.id
-            );
-
-            createdModules.push(...newModules);
-        }
-
-        return createdModules;
-    }
-
     static async getModulesByProfessional(idProfessional: number) {
         const em = await getORM().em.fork();
 
@@ -324,4 +250,105 @@ export default class ModuleService {
 
         return modules;
     }
+
+
+    static async renewModules(modulesToRenew: RenewModuleDto[]) {
+        const em = await getORM().em.fork();
+
+        if (!modulesToRenew || modulesToRenew.length === 0) {
+            throw new InvalidParameterError('No se encontraron modulos a renovar');
+        }
+
+        const ids = modulesToRenew.map(m => m.id);
+
+        const modules = await em.find(
+            Module,
+            { id: { $in: ids } },
+            { populate: ['professional', 'consultingRoom'] }
+        );
+
+        if (modules.length === 0) {
+            throw new NotFoundError('Modulos');
+        }
+
+        const paidMap = new Map<number, boolean>();
+        for (const m of modulesToRenew) {
+            paidMap.set(m.id, m.isPaid);
+        }
+
+        const now = new Date();
+        const currentMonth = now.getMonth() + 1;
+        const currentYear = now.getFullYear();
+
+        for (const mod of modules) {
+            if (mod.validMonth !== currentMonth || mod.validYear !== currentYear) {
+                throw new InvalidParameterError('Solo se pueden renovar modulos del mes vigente');
+            }
+
+            if (mod.status === ModuleStatus.Canceled) {
+                throw new InvalidParameterError('Solo se pueden renovar modulos a pagar o que hayan sido pagados');
+            }
+        }
+
+        const professional = modules[0].professional;
+
+        for (const mod of modules) {
+            if (mod.professional.id !== professional.id) {
+                throw new InvalidParameterError('No pueden renovarse modulos de distintos profesionales');
+            }
+        }
+
+        const baseMonth = modules[0].validMonth;
+        const baseYear = modules[0].validYear;
+
+        let nextMonth = baseMonth + 1;
+        let nextYear = baseYear;
+
+        if (nextMonth > 12) {
+            nextMonth = 1;
+            nextYear++;
+        }
+
+        const grouped = new Map<string, Module[]>();
+
+        for (const mod of modules) {
+            let isPaid = paidMap.get(mod.id);
+
+            if (!isPaid) {
+                isPaid = false;
+            }
+
+            const key = `${mod.day}-${mod.consultingRoom.id}-${mod.startTime}-${mod.endTime}-${isPaid}`;
+
+            if (!grouped.has(key)) {
+                grouped.set(key, []);
+            }
+
+            grouped.get(key)!.push(mod);
+        }
+
+        const createdModules: Module[] = [];
+
+        for (const group of grouped.values()) {
+            const base = group[0];
+            const isPaid = paidMap.get(base.id) ?? false;
+
+            const newModules = await ModuleService.addModules(
+                base.day,
+                base.startTime,
+                base.endTime,
+                nextMonth,
+                nextYear,
+                professional.id,
+                base.consultingRoom.id,
+                isPaid
+            );
+
+            createdModules.push(...newModules);
+        }
+
+        return createdModules;
+    }
 }
+
+

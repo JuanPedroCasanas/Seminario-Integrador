@@ -53,7 +53,7 @@ export class Module {
     return endTime;
   }
 
-  constructor(day: DayOfWeek, startTime: string, validMonth: number, validYear: number, professional: Professional, consultingRoom: ConsultingRoom, moduleType: ModuleType) {
+  constructor(day: DayOfWeek, startTime: string, validMonth: number, validYear: number, professional: Professional, consultingRoom: ConsultingRoom, moduleType: ModuleType, status: ModuleStatus) {
     this.day = day;
     this.startTime = startTime;
     this.endTime = this.calculateEndTime(moduleType, startTime);
@@ -62,7 +62,7 @@ export class Module {
     this.professional = professional;
     this.consultingRoom = consultingRoom;
     this.moduleType = moduleType;
-    this.status = ModuleStatus.ToBePaid;
+    this.status = status;
     }
 }
 

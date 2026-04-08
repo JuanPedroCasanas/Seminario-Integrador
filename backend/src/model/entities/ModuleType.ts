@@ -14,13 +14,17 @@ export class ModuleType {
 
   @Property()
   duration!: number; //Lo manejo en numero ya que puede ser 1, 3 o 6 horas.
+
+  @Property()
+  cost!: number;
   
   @OneToMany(() => Module, module => module.moduleType)
   modules = new Collection<Module>(this);
   
 
-  constructor(name: string, duration: number) {
+  constructor(name: string, duration: number, cost: number) {
     this.name = name;
     this.duration = duration;
+    this.cost = cost;
   }
 }

@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { day, endTime, startTime, validMonth, validYear } from "../../schemaProps/bodies/moduleBody";
+import { day, endTime, isPaid, startTime, validMonth, validYear } from "../../schemaProps/bodies/moduleBody";
 import { idConsultingRoom } from "../../schemaProps/bodies/consultingRoomBody";
 import { idProfessional } from "../../schemaProps/bodies/professionalBody";
 export const addModuleSchema = z.object({
@@ -11,5 +11,6 @@ export const addModuleSchema = z.object({
     validYear,
     idProfessional,
     idConsultingRoom,
+    isPaid
   })
 });
