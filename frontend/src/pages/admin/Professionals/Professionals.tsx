@@ -185,7 +185,7 @@ export default function Professionals() {
           <PrimaryButton onClick={openCreateModal}>
             Crear nuevo profesional
           </PrimaryButton>
-          <PrimaryButton variant="outline" onClick={() => {/* TODO: Ver licencias */}}>
+          <PrimaryButton variant="outline" onClick={() => navigate('/admin/professionals-leaves')}>
             Ver licencias
           </PrimaryButton>
         </div>

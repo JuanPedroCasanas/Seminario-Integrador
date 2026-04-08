@@ -13,7 +13,7 @@ export default function Navbar() {
 
   // traducción de los roles q vienen del backend:
   const ROLE_LABEL: Record<string, string> = {
-    admin: "Admin",
+    admin: "Direccion",
     professional: "Profesional",
     legalGuardian: "Responsable legal",
     patient: "Paciente",
@@ -160,10 +160,16 @@ export default function Navbar() {
           {isLoggedIn ? (
             <>
             <NavButton to="/edit-profile">
-              {firstName && <span>Nombre: {firstName}</span>}
-              {lastName && <span className="ml-2">Apellido: {lastName}</span>}
-              {roleText && <span className="ml-2">Perfil: {roleText}</span>}
-              {!firstName && !lastName && "Mi perfil"}
+              {user?.role === UserRole.Admin ? (
+                <span>Perfil: {roleText}</span>
+              ) : (
+                <>
+                  {firstName && <span>Nombre: {firstName}</span>}
+                  {lastName && <span className="ml-2">Apellido: {lastName}</span>}
+                  {roleText && <span className="ml-2">Perfil: {roleText}</span>}
+                  {!firstName && !lastName && "Mi perfil"}
+                </>
+              )}
             </NavButton>
 
       {/* <LogoutButton /> */}
@@ -206,10 +212,16 @@ export default function Navbar() {
               onClick={() => setOpen(false)}
             >
               <div className="flex flex-col items-center gap-1 text-sm">
-                {firstName && <span>Nombre: {firstName}</span>}
-                {lastName && <span>Apellido: {lastName}</span>}
-                {roleText && <span>Perfil: {roleText}</span>}
-                {!firstName && !lastName && <span>Mi perfil</span>}
+                {user?.role === UserRole.Admin ? (
+                  <span>Perfil: {roleText}</span>
+                ) : (
+                  <>
+                    {firstName && <span>Nombre: {firstName}</span>}
+                    {lastName && <span>Apellido: {lastName}</span>}
+                    {roleText && <span>Perfil: {roleText}</span>}
+                    {!firstName && !lastName && <span>Mi perfil</span>}
+                  </>
+                )}
               </div>
             </NavLink>
           ) : (

@@ -72,7 +72,6 @@ export default function ProfessionalModules() {
     <Page>
       <SectionHeader 
         title="Mis Módulos" 
-        subtitle="Visualización de módulos alquilados"
       />
 
       {loading ? (

@@ -3,6 +3,7 @@ export { default as ConsultingRooms } from "./admin/ConsultingRooms/ConsultingRo
 export { default as HealthInsurances } from "./admin/HealthInsurances/HealthInsurances";
 export { default as Occupations } from "./admin/Occupations/Occupations";
 export { default as Professionals } from "./admin/Professionals/Professionals";
+export { default as ProfessionalsLeaves } from "./admin/ProfessionalsLeaves/ProfessionalsLeaves";
 
 // Appointment List
 export { default as AppointmentList } from "./AppointmentList/AppointmentList";

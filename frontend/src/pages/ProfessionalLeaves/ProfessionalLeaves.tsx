@@ -16,8 +16,27 @@ export default function ProfessionalLeaves() {
 
   // Modal de solicitud
   const [requestModalOpen, setRequestModalOpen] = useState(false);
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  
+  // Fechas en partes para forzar formato DD/MM/YYYY
+  const [startDay, setStartDay] = useState('');
+  const [startMonth, setStartMonth] = useState('');
+  const [startYear, setStartYear] = useState('');
+  const [endDay, setEndDay] = useState('');
+  const [endMonth, setEndMonth] = useState('');
+  const [endYear, setEndYear] = useState('');
+
+  // Convertir partes a YYYY-MM-DD para enviar al backend
+  const startDate = startDay && startMonth && startYear
+    ? `${startYear}-${startMonth.padStart(2, '0')}-${startDay.padStart(2, '0')}`
+    : '';
+  const endDate = endDay && endMonth && endYear
+    ? `${endYear}-${endMonth.padStart(2, '0')}-${endDay.padStart(2, '0')}`
+    : '';
+
+  const resetDates = () => {
+    setStartDay(''); setStartMonth(''); setStartYear('');
+    setEndDay(''); setEndMonth(''); setEndYear('');
+  };
 
   // Modal de confirmación de solicitud
   const [confirmRequestModalOpen, setConfirmRequestModalOpen] = useState(false);
@@ -87,8 +106,7 @@ export default function ProfessionalLeaves() {
         const newLeave: Leave = response.leave;
         setLeaves([...leaves, newLeave]);
         setToast({ message: 'Licencia solicitada correctamente', type: 'success' });
-        setStartDate('');
-        setEndDate('');
+        resetDates();
         setConfirmRequestModalOpen(false);
       } else {
         const error = await res.json();
@@ -135,11 +153,22 @@ export default function ProfessionalLeaves() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('es-AR', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
-    });
+    // Parsear directamente sin usar Date para evitar problemas de zona horaria
+    if (dateString.includes('-')) {
+      // Formato YYYY-MM-DD
+      const parts = dateString.split('T')[0].split('-'); // Remover parte de hora si existe
+      const year = parts[0];
+      const month = parts[1];
+      const day = parts[2];
+      return `${day}/${month}/${year}`;
+    }
+    
+    // Fallback para otros formatos
+    const dateObj = new Date(dateString);
+    const day = String(dateObj.getDate()).padStart(2, '0');
+    const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+    const year = dateObj.getFullYear();
+    return `${day}/${month}/${year}`;
   };
 
   const getStatusLabel = (leave: Leave) => {
@@ -226,31 +255,74 @@ export default function ProfessionalLeaves() {
         <Modal
           onClose={() => {
             setRequestModalOpen(false);
-            setStartDate('');
-            setEndDate('');
+            resetDates();
           }}
           title="Solicitud de licencias"
         >
         <div className="space-y-4">
-          <FormField label="Fecha desde:" htmlFor="startDate">
-            <input
-              type="date"
-              id="startDate"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </FormField>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha desde:</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                placeholder="DD"
+                min={1} max={31}
+                value={startDay}
+                onChange={(e) => setStartDay(e.target.value)}
+                className="w-16 border border-gray-300 rounded-lg px-3 py-2 text-center"
+              />
+              <span className="text-gray-500 font-semibold">/</span>
+              <input
+                type="number"
+                placeholder="MM"
+                min={1} max={12}
+                value={startMonth}
+                onChange={(e) => setStartMonth(e.target.value)}
+                className="w-16 border border-gray-300 rounded-lg px-3 py-2 text-center"
+              />
+              <span className="text-gray-500 font-semibold">/</span>
+              <input
+                type="number"
+                placeholder="AAAA"
+                min={2020} max={2100}
+                value={startYear}
+                onChange={(e) => setStartYear(e.target.value)}
+                className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-center"
+              />
+            </div>
+          </div>
 
-          <FormField label="Fecha hasta:" htmlFor="endDate">
-            <input
-              type="date"
-              id="endDate"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full border border-gray-300 rounded-lg px-4 py-2"
-            />
-          </FormField>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Fecha hasta:</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="number"
+                placeholder="DD"
+                min={1} max={31}
+                value={endDay}
+                onChange={(e) => setEndDay(e.target.value)}
+                className="w-16 border border-gray-300 rounded-lg px-3 py-2 text-center"
+              />
+              <span className="text-gray-500 font-semibold">/</span>
+              <input
+                type="number"
+                placeholder="MM"
+                min={1} max={12}
+                value={endMonth}
+                onChange={(e) => setEndMonth(e.target.value)}
+                className="w-16 border border-gray-300 rounded-lg px-3 py-2 text-center"
+              />
+              <span className="text-gray-500 font-semibold">/</span>
+              <input
+                type="number"
+                placeholder="AAAA"
+                min={2020} max={2100}
+                value={endYear}
+                onChange={(e) => setEndYear(e.target.value)}
+                className="w-24 border border-gray-300 rounded-lg px-3 py-2 text-center"
+              />
+            </div>
+          </div>
 
           <div className="flex gap-3 justify-end mt-6">
             <PrimaryButton onClick={handleOpenConfirmRequest}>
