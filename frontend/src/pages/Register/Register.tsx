@@ -240,13 +240,8 @@ const [form, setForm] = useState<{
                 onChange={handleChange}
                 required
                 >
-<<<<<<< HEAD
-                  <option value="Paciente">Paciente (mayor de 18 años)</option>
-                  <option value="Responsable Legal">Responsable Legal (hijos a cargo)</option>
-=======
                 <option value="Paciente">Paciente (mayor de 18 años)</option>
                 <option value="Responsable Legal">Responsable Legal (hijos a cargo)</option>
->>>>>>> d294cf14ba4f968a83efe259d9b1d69c295fcb5a
                 </select>
             </FormField>
             
