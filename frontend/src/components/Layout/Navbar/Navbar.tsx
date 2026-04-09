@@ -159,18 +159,20 @@ export default function Navbar() {
         <div className="hidden md:flex items-center gap-2">
           {isLoggedIn ? (
             <>
-            <NavButton to="/edit-profile">
-              {user?.role === UserRole.Admin ? (
-                <span>Perfil: {roleText}</span>
-              ) : (
-                <>
-                  {firstName && <span>Nombre: {firstName}</span>}
-                  {lastName && <span className="ml-2">Apellido: {lastName}</span>}
-                  {roleText && <span className="ml-2">Perfil: {roleText}</span>}
-                  {!firstName && !lastName && "Mi perfil"}
-                </>
-              )}
-            </NavButton>
+            {user?.role === UserRole.Admin ? (
+                            <NavButton to="/debug-console">
+                              <span>Perfil: {roleText}</span>
+                            </NavButton>
+                          ) : (
+                            <>
+                            <NavButton to="/edit-profile">
+                              {firstName && <span>Nombre: {firstName}</span>}
+                              {lastName && <span className="ml-2">Apellido: {lastName}</span>}
+                              {roleText && <span className="ml-2">Perfil: {roleText}</span>}
+                              {!firstName && !lastName && "Mi perfil"}
+                              </NavButton>
+                            </>
+                          )}
 
       {/* <LogoutButton /> */}
             

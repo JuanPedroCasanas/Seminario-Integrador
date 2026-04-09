@@ -25,7 +25,7 @@ export class UserService {
         const user = await em.findOne(
             User,
             { mail: normalizedMail, isActive: true }, //Solo un usuario existe con un mail y estado activo a la vez.
-            { populate: ['patient', 'professional', 'legalGuardian'] }
+            { populate: ['patient', 'professional', 'legalGuardian', 'professional.occupation'] }
         );
 
         if (!user) {
@@ -107,7 +107,7 @@ export class UserService {
         const user = await em.findOne(
             User,
             { id: idUser },
-            { populate: ['patient', 'professional', 'legalGuardian'] }
+            { populate: ['patient', 'professional', 'legalGuardian', 'professional.occupation'] }
         );
 
         if (!user || !user.isActive) {
