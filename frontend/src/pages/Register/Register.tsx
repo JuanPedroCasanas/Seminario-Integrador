@@ -240,8 +240,13 @@ const [form, setForm] = useState<{
                 onChange={handleChange}
                 required
                 >
+<<<<<<< HEAD
                   <option value="Paciente">Paciente (mayor de 18 años)</option>
                   <option value="Responsable Legal">Responsable Legal (hijos a cargo)</option>
+=======
+                <option value="Paciente">Paciente (mayor de 18 años)</option>
+                <option value="Responsable Legal">Responsable Legal (hijos a cargo)</option>
+>>>>>>> d294cf14ba4f968a83efe259d9b1d69c295fcb5a
                 </select>
             </FormField>
             
@@ -313,7 +318,6 @@ const [form, setForm] = useState<{
             </FormField>
 
             {/* Obra social si rol = Paciente o Responsable Legal */}
-            {(form.role === "Paciente" || form.role === "Responsable Legal") && (
                 <FormField label="Obra Social" htmlFor="idHealthInsurance">
                 <select
                     id="idHealthInsurance"
@@ -330,7 +334,7 @@ const [form, setForm] = useState<{
                     ))}
                 </select>
                 </FormField>
-            )}
+
 
             {/* Contraseña */}
             <FormField label="Contraseña" htmlFor="password">
