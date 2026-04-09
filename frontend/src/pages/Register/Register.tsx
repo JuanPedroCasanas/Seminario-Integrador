@@ -205,7 +205,7 @@ const [form, setForm] = useState<{
       if(response.ok) {
         // Redirigir a login después de un registro exitoso
         setTimeout(() => {
-          navigate('/login', { state: { toastMessage: toastData } });
+          navigate('/', { state: { toastMessage: toastData } });
         }, 1500); // Dar tiempo para ver el toast
       }
     } catch (error) {
