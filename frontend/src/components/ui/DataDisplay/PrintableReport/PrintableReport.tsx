@@ -124,7 +124,11 @@ export default function PrintableReport({
                             </div>
                             <div>
                               <span className="font-semibold">Mail: </span>
-                              {apt.patient?.user?.mail ?? '—'}
+                              {apt.patient?.user?.mail ?? (
+                                  typeof apt.legalGuardian?.user === "object"
+                                    ? apt.legalGuardian.user?.mail
+                                    : undefined
+                                ) ?? '—'}
                             </div>
                             <div>
                               <span className="font-semibold">Horario: </span>

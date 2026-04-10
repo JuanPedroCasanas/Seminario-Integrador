@@ -472,7 +472,7 @@ export class AppointmentService {
                 }
             },
             { 
-                populate: ['patient', 'patient.user', 'healthInsurance', 'module.consultingRoom', 'series'],
+                populate: ['patient', 'patient.user', 'healthInsurance', 'module.consultingRoom', 'series', 'legalGuardian', 'legalGuardian.user'],
                 orderBy: { startTime: 'ASC' }
             }
         );
