@@ -465,10 +465,12 @@ export default function AppointmentSchedule() {
     // Calcular cuántos días de ese tipo quedan en el mes actual (después de hoy)
     const currentMonth = now.getMonth();
     const currentYear = now.getFullYear();
+
+    // anotado como posible bug a futuro
     const lastDayOfMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     
     let expectedDaysCount = 0;
-    for (let day = now.getDate() + 1; day <= lastDayOfMonth; day++) {
+    for (let day = now.getDate(); day <= lastDayOfMonth; day++) {
       const testDate = new Date(currentYear, currentMonth, day);
       if (testDate.getDay() === selectedDay) {
         expectedDaysCount++;

@@ -264,27 +264,7 @@ export default function EditProfile() {
     <Page>
         <main className="grid min-h-screen">
           <section className="max-w-3xl mx-auto p-4 sm:p-6">
-            <SectionHeader title={isAdmin ? "Seleccionar usuario" : selectedUser ? `Datos ${selectedUser.role === "patient" ? "Paciente" : selectedUser.role === "professional" ? "Profesional" : selectedUser.role === "legalGuardian" ? "Responsable Legal" : ""}` : "Editar mi perfil"} />
-            {isAdmin && (
-              <FormField label="Usuario" htmlFor="user">
-                <select
-                  id="user"
-                className="border rounded-lg p-3 w-full text-gray-700 focus:ring-2 focus:ring-cyan-500"
-                  value={selectedUser?.id ?? ""}
-                  onChange={(e) => {
-                    const user = users.find((u) => u.id === Number(e.target.value));
-                    setSelectedUser(user ?? null);
-                  }}
-                >
-                  <option value="">Seleccionar…</option>
-                  {users.map((user) => (
-                    <option key={user.id} value={user.id}>
-                      {user.id} - {user.mail} — {user.role}
-                    </option>
-                  ))}
-                </select>
-              </FormField>
-            )}
+            <SectionHeader title={isAdmin ? "Modificar datos profesional" : selectedUser ? `Datos ${selectedUser.role === "patient" ? "Paciente" : selectedUser.role === "professional" ? "Profesional" : selectedUser.role === "legalGuardian" ? "Responsable Legal" : ""}` : "Editar mi perfil"} />
           </section>
 
 
