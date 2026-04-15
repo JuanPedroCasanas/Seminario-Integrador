@@ -302,8 +302,9 @@ export default function EditProfile() {
 
     <Page>
         <main className="grid min-h-screen">
-          <section className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
+          <section className="max-w-3xl mx-auto p-4 sm:p-6">
             <SectionHeader title={isAdmin ? "Modificar datos profesional" : selectedUser ? `Datos ${selectedUser.role === "patient" ? "Paciente" : selectedUser.role === "professional" ? "Profesional" : selectedUser.role === "legalGuardian" ? "Responsable Legal" : ""}` : "Editar mi perfil"} />
+          </section>
 
             {selectedUser && (
             <section className="space-y-6">
@@ -476,7 +477,7 @@ export default function EditProfile() {
             </Modal>
             )}
 
-          </section>
+
 
         </main>
 
