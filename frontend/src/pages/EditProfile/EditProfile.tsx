@@ -21,7 +21,7 @@ import { redirectByRole } from "@/common/utils/auth/RoleRedirect";
 
 
 export default function EditProfile() {
-  const { user } = useAuth();
+  const { user, setUser } = useAuth();
   const isAdmin = user?.role === UserRole.Admin;
   const logout = useLogout();
   const location = useLocation();
@@ -83,7 +83,7 @@ export default function EditProfile() {
           setToast(toastData);
         } else {
           const data: User[] = await res.json();
-          setUsers(data);
+          setUsers(data.filter(u => !!u.professional));
         }
     })();
   }, []);
@@ -235,6 +235,45 @@ export default function EditProfile() {
 
     // Redirigir al portal correspondiente
     if (res.ok) {
+      if (!isAdmin && user) {
+        let updatedUser: User = { ...user };
+        if (selectedUser.patient && user.patient) {
+          updatedUser = {
+            ...user,
+            patient: {
+              ...user.patient,
+              firstName: (firstName ?? "").trim(),
+              lastName: (lastName ?? "").trim(),
+              telephone: (telephone ?? "").trim(),
+              birthdate: (birthdate ?? "").trim(),
+              healthInsurance: selectedHealthInsuranceId,
+            },
+          };
+        } else if (selectedUser.legalGuardian && user.legalGuardian) {
+          updatedUser = {
+            ...user,
+            legalGuardian: {
+              ...user.legalGuardian,
+              firstName: (firstName ?? "").trim(),
+              lastName: (lastName ?? "").trim(),
+              telephone: (telephone ?? "").trim(),
+              birthdate: (birthdate ?? "").trim(),
+              healthInsurance: selectedHealthInsuranceId,
+            },
+          };
+        } else if (selectedUser.professional && user.professional) {
+          updatedUser = {
+            ...user,
+            professional: {
+              ...user.professional,
+              firstName: (firstName ?? "").trim(),
+              lastName: (lastName ?? "").trim(),
+              telephone: (telephone ?? "").trim() || undefined,
+            },
+          };
+        }
+        setUser(updatedUser);
+      }
       const redirectPath = redirectByRole(selectedUser.role);
       setTimeout(() => {
         navigate(redirectPath);
@@ -263,10 +302,8 @@ export default function EditProfile() {
 
     <Page>
         <main className="grid min-h-screen">
-          <section className="max-w-3xl mx-auto p-4 sm:p-6">
+          <section className="max-w-3xl mx-auto p-4 sm:p-6 space-y-4">
             <SectionHeader title={isAdmin ? "Modificar datos profesional" : selectedUser ? `Datos ${selectedUser.role === "patient" ? "Paciente" : selectedUser.role === "professional" ? "Profesional" : selectedUser.role === "legalGuardian" ? "Responsable Legal" : ""}` : "Editar mi perfil"} />
-          </section>
-
 
             {selectedUser && (
             <section className="space-y-6">
@@ -438,6 +475,8 @@ export default function EditProfile() {
                 </div>
             </Modal>
             )}
+
+          </section>
 
         </main>
 

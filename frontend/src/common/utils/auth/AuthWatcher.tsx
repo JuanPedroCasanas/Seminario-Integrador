@@ -13,7 +13,6 @@ export default function AuthWatcher() {
     logout();
   }, [logout]);
 
-  // actualmente no tiene uso, ya que no tenemos la parte de roles en el backend
   const onForbidden = useCallback((e: Event) => {
     navigate("/home", { replace: true }); 
   }, [navigate]);
